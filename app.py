@@ -10,9 +10,7 @@ currentDirectory = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__)
 api = Api(app)
-app.config[
-    "SQLALCHEMY_DATABASE_URI"
-] = f'sqlite:///{os.path.join(currentDirectory, "database.sqlite3")}'
+app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{os.path.join(currentDirectory, "database.sqlite3")}'
 app.config["SECRET_KEY"] = "thisissecret"
 
 db = SQLAlchemy()
@@ -106,8 +104,8 @@ def load_user(id):
 
 class AddUser(Resource):
     def post(self):
+        args = parser.parse_args()
         try:
-            args = parser.parse_args()
             first_name = args["first_name"]
             last_name = args["last_name"]
             username = args["username"]
@@ -119,7 +117,7 @@ class AddUser(Resource):
 
             user = UserModel(username=username, password=password)  # type: ignore
             db.session.add(user)
-            db.session.commit()
+            # db.session.commit()
 
             info = InfoModel(username=user.username, first_name=first_name, last_name=last_name, role=role)  # type: ignore
             db.session.add(info)
@@ -128,13 +126,13 @@ class AddUser(Resource):
             return {"message": f"{role} user added successfully"}, 201
 
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
 
 
 class Login(Resource):
     def post(self):
+        args = parser.parse_args()
         try:
-            args = parser.parse_args()
             username = args["username"]
             password = args["password"]
             role = args["role"]
@@ -168,7 +166,7 @@ class Login(Resource):
                 return {"message": f"{role} user does not exist"}, 404
 
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
 
 
 class UserInfo(Resource):
@@ -184,9 +182,7 @@ class UserInfo(Resource):
         if not info:
             return {"message": "User does not exist"}, 404
 
-        return {
-            "message": f"User {user.username}'s password is {user.password} and role is {info.role}"
-        }, 200
+        return {"username": user.username, "password": user.password, "first_name": info.first_name, "last_name": info.last_name, "role": info.role}, 200
 
 
 class Logout(Resource):
@@ -196,14 +192,13 @@ class Logout(Resource):
     
 class AddSection(Resource):
     @login_required
-    @check_role("Librarian")
+    @check_role(role = "Librarian")
     def post(self):
+        args = parser.parse_args()
         try:
-            args = parser.parse_args()
             name = args["section_name"]
             description = args["description"]
             
-            #today's date
             date_created = datetime.now()
 
             section = SectionModel(name=name, date_created=date_created, description=description)  # type: ignore
@@ -213,11 +208,11 @@ class AddSection(Resource):
             return {"message": f"Section {name} added successfully"}, 201
 
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
 
 class AddBookAuthor(Resource):
     @login_required
-    @check_role("Librarian")
+    @check_role(role = "Librarian")
     def post(self):
         try:
             args = parser.parse_args()
@@ -250,7 +245,7 @@ class AddBookAuthor(Resource):
             return {"message": f"Book {book_name} with authors {author_names} added successfully"}, 201
 
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
 
 class ViewSections(Resource):
     @login_required
@@ -261,10 +256,10 @@ class ViewSections(Resource):
             if not sections:
                 return {"message": "No sections exist"}, 404
 
-            return {"message": [section.name for section in sections]}, 200
+            return {"sections": [section.name for section in sections]}, 200
 
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
 
 class ViewBooks(Resource):
     @login_required
@@ -273,7 +268,7 @@ class ViewBooks(Resource):
             books = BookModel.query.all()
 
             if not books:
-                return {"message": "No books exist"}, 404
+                return {"message": "No book exists"}, 404
             
             book_sections = []
             for book in books:
@@ -283,17 +278,17 @@ class ViewBooks(Resource):
                 
                 book_sections.append((book.name, section.name))
 
-            return {"message": f"{[book_section for book_section in book_sections]}"}, 200
+            return {"books": [book_section for book_section in book_sections]}, 200
         
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
 
 class RequestBook(Resource):
     @login_required
     @check_role(role = "General")
     def post(self):
+        args = parser.parse_args()
         try:
-            args = parser.parse_args()
             isbn = args["isbn"]
             book = BookModel.query.filter_by(isbn=isbn).first()
 
@@ -307,14 +302,14 @@ class RequestBook(Resource):
             return {"message": f"Book {book.name} requested successfully"}, 201
 
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
         
 class IssueBook(Resource):
     @login_required
     @check_role(role = "Librarian")
     def post(self):
+        args = parser.parse_args()
         try:
-            args = parser.parse_args()
             isbn = args["isbn"]
             username = args["username"]
 
@@ -325,23 +320,21 @@ class IssueBook(Resource):
             
             book_issue = BookIssueModel(isbn=isbn, username=username, date_of_issue=datetime.now(), date_of_return=datetime.now() + timedelta(days=7))  # type: ignore
             db.session.add(book_issue)
-            db.session.commit()
 
-            # Delete request from BookRequest
             BookRequestsModel.query.filter_by(isbn=isbn, username=username).delete()
             db.session.commit()
 
             return {"message": f"Book {isbn} issued to {username} successfully"}, 201
 
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
     
 class ReturnBook(Resource):
     @login_required
     @check_role(role = "General")
     def post(self):
+        args = parser.parse_args()
         try:
-            args = parser.parse_args()
             isbn = args["isbn"]
             username = current_user.username
             book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = username)
@@ -355,7 +348,7 @@ class ReturnBook(Resource):
             return {"message": f"Book with isbn {isbn} has been returned"}, 200
         
         except Exception as e:
-            return {"Error": e}, 500
+            return {"Error": f"{e}"}, 500
 
 api.add_resource(AddUser, "/addUser")
 api.add_resource(Login, "/login")
