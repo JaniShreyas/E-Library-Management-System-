@@ -117,7 +117,6 @@ class AddUser(Resource):
 
             user = UserModel(username=username, password=password)  # type: ignore
             db.session.add(user)
-            # db.session.commit()
 
             info = InfoModel(username=user.username, first_name=first_name, last_name=last_name, role=role)  # type: ignore
             db.session.add(info)
@@ -235,7 +234,6 @@ class AddBookAuthor(Resource):
             
             book = BookModel(isbn=isbn, name=book_name, content=content, section_id=section.id)  # type: ignore
             db.session.add(book)
-            db.session.commit()
 
             for author_name in author_names_list:
                 author = BookAuthorsModel(isbn=isbn, author_name=author_name)  # type: ignore
@@ -350,17 +348,17 @@ class ReturnBook(Resource):
         except Exception as e:
             return {"Error": f"{e}"}, 500
 
-api.add_resource(AddUser, "/addUser")
-api.add_resource(Login, "/login")
-api.add_resource(UserInfo, "/userInfo")
-api.add_resource(Logout, "/logout")
-api.add_resource(AddSection, '/addSection')
-api.add_resource(AddBookAuthor, '/addBookAuthor')
-api.add_resource(ViewSections, '/viewSections')
-api.add_resource(ViewBooks, '/viewBooks')
-api.add_resource(RequestBook, '/requestBook')
-api.add_resource(IssueBook, '/issueBook')
-api.add_resource(ReturnBook, "/returnBook")
+api.add_resource(AddUser, "/api/addUser")
+api.add_resource(Login, "/api/login")
+api.add_resource(UserInfo, "/api/userInfo")
+api.add_resource(Logout, "/api/logout")
+api.add_resource(AddSection, '/api/addSection')
+api.add_resource(AddBookAuthor, '/api/addBookAuthor')
+api.add_resource(ViewSections, '/api/viewSections')
+api.add_resource(ViewBooks, '/api/viewBooks')
+api.add_resource(RequestBook, '/api/requestBook')
+api.add_resource(IssueBook, '/api/issueBook')
+api.add_resource(ReturnBook, "/api/returnBook")
 
 if __name__ == "__main__":
     app.run(debug=True)
