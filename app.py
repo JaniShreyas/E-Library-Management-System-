@@ -19,6 +19,8 @@ login_manager = LoginManager(app)
 db.init_app(app)
 app.app_context().push()
 
+
+# Models
 class UserLoginModel(db.Model, UserMixin):
     __tablename__ = "user_login"
     id = db.Column(db.Integer, primary_key=True)
@@ -43,6 +45,7 @@ class BookModel(db.Model):
     __tablename__ = "book"
     isbn = db.Column(db.String(13), primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    # page_count = db.Column(db.Integer, nullable = False)
     content = db.Column(db.String(300), nullable=False)
     section_id = db.Column(db.Integer, db.ForeignKey("section.id"), nullable=False)
 
@@ -70,14 +73,8 @@ class BookFeedbackModel(db.Model):
     isbn = db.Column(db.String(13), db.ForeignKey("book.isbn"), primary_key = True)
     feedback = db.Column(db.String(500), nullable = False)
 
+# Parse Args
 reqParser = reqparse.RequestParser()
-
-reqParser.add_argument("isbn", type=str)
-reqParser.add_argument("book_name", type=str)
-reqParser.add_argument("section_name", type=str)
-reqParser.add_argument("description", type=str)
-reqParser.add_argument("content", type=str)
-reqParser.add_argument("author_names", type=str)
 
 reqParser.add_argument("username", type=str)
 reqParser.add_argument("password", type=str)
@@ -85,9 +82,19 @@ reqParser.add_argument("first_name", type=str)
 reqParser.add_argument("last_name", type=str)
 reqParser.add_argument("role", type=str)
 
+reqParser.add_argument("isbn", type=str)
+reqParser.add_argument("book_name", type=str)
+reqParser.add_argument("page_count", type = int)
+reqParser.add_argument("section_name", type=str)
+reqParser.add_argument("description", type=str)
+reqParser.add_argument("content", type=str)
+reqParser.add_argument("author_names", type=str)
+
 reqParser.add_argument("feedback", type = str)
+reqParser.add_argument("old_to_new_author", type = str)
+reqParser.add_argument("old_to_new_isbn", type = str)
 
-
+# Decorator function to verify role
 def check_role(role: str):
     def decorator(function):
         def wrapper(*args, **kwargs):
@@ -386,8 +393,47 @@ class BookFeedback(Resource):
         except Exception as e:
             return {"Error": f"{e}"}, 500
 
-# class EditBookInfo(Resource):
+class EditBookInfo(Resource):
+    @login_required
+    @check_role(role = "Librarian")
+    def post(self):
+        args = reqParser.parse_args()
+        try:
+            old_to_new_isbn = args["old_to_new_isbn"]
+            name = args["book_name"]
+            old_to_new_author = args["old_to_new_author"]
+            # page_count = args["page_count"]
+            section_name = args["section_name"]
+            oldIsbn, newIsbn = tuple(old_to_new_isbn.split(','))
+            oldAuthor, newAuthor = tuple(old_to_new_author.split(','))
 
+            book = BookModel.query.filter_by(isbn = oldIsbn).first()
+            if not book:
+                return {"message": f"Book does not exist"}, 404
+            
+            book_author = BookAuthorModel.query.filter_by(isbn = oldIsbn, author_name = oldAuthor).first()
+            if not book_author:
+                return {"message": f"ISBN does not exist or Author {oldAuthor} does not exist"}, 404
+            
+            all_book_entries_in_book_author = BookAuthorModel.query.filter_by(isbn = oldIsbn).update({"isbn": newIsbn})
+            
+            section = SectionModel.query.filter_by(name = section_name).first()
+            if not section:
+                return {"message": f"Section {section_name} does not exist"}, 404
+            
+            book.isbn = newIsbn
+            book.name = name
+            book.section_id = section.id
+            #book.page_count = page_count
+
+            book_author.isbn = newIsbn
+            book_author.author_name = newAuthor
+            db.session.commit()
+
+            return {"message": "Book info changed successfully"}
+        
+        except Exception as e:
+            return {"Error": f"{e}"}
 
 
 api.add_resource(AddUser, "/api/addUser")
@@ -402,6 +448,7 @@ api.add_resource(RequestBook, '/api/requestBook')
 api.add_resource(IssueBook, '/api/issueBook')
 api.add_resource(ReturnBook, "/api/returnBook")
 api.add_resource(BookFeedback, "/api/bookFeedback")
+api.add_resource(EditBookInfo, "/api/editBookInfo")
 
 if __name__ == "__main__":
     app.run(debug=True)
