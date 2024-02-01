@@ -137,7 +137,7 @@ class AddUser(Resource):
             return {"message": f"{role} user added successfully"}, 201
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
 
 class Login(Resource):
@@ -177,7 +177,7 @@ class Login(Resource):
                 return {"message": f"{role} user does not exist"}, 404
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
 class UserInfo(Resource):
     @login_required
@@ -220,7 +220,7 @@ class AddSection(Resource):
             return {"message": f"Section {name} added successfully"}, 201
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
 class AddBookAuthor(Resource):
     @login_required
@@ -256,7 +256,7 @@ class AddBookAuthor(Resource):
             return {"message": f"Book {book_name} with authors {author_names} added successfully"}, 201
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
 class ViewSections(Resource):
     @login_required
@@ -270,9 +270,9 @@ class ViewSections(Resource):
             return {"sections": [(section.id, section.name, str(section.date_created), section.description) for section in sections]}, 200
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
-class ViewBooks(Resource):
+class ViewAllBooks(Resource):
     @login_required
     def get(self):
         try:
@@ -292,7 +292,7 @@ class ViewBooks(Resource):
             return {"Books": outputList}
         
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
 class RequestBook(Resource):
     @login_required
@@ -313,7 +313,7 @@ class RequestBook(Resource):
             return {"message": f"Book {book.name} requested successfully"}, 201
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
         
 class IssueBook(Resource):
     @login_required
@@ -342,7 +342,37 @@ class IssueBook(Resource):
             return {"message": f"Book {book.name} issued to {username} successfully"}, 201
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
+
+class ViewIssuedBooks(Resource):
+    @login_required
+    def post(self):
+        info = UserInfoModel.query.filter_by(username = current_user.username).first()
+        if not info:
+            return {"message": "User info does not exist"}, 404
+        
+        args = reqParser.parse_args()
+        try:
+            username = args["username"]
+            if info.role == "General":
+                username = current_user.username
+            
+            book_issue = BookIssueModel.query.filter_by(username = username).all()
+
+            outputList = []
+            for issued_book in book_issue:
+                book = BookModel.query.filter_by(isbn = issued_book.isbn).first()
+                if not book:
+                    return {"message": "Book does not exist"}, 404
+                section = SectionModel.query.filter_by(id = book.section_id).first()
+                if not section:
+                    return {"message": "Section does not exist"}, 404
+                outputList.append((book.isbn, book.name, book.content, book.section_id, section.name))
+            
+            return {"Books": outputList}
+
+        except Exception as e:
+            return {"error": f"{e}"}
     
 class ReturnBook(Resource):
     @login_required
@@ -367,7 +397,7 @@ class ReturnBook(Resource):
             return {"message": f"Book {book.name} has been returned"}, 200
         
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
 class BookFeedback(Resource):
     @login_required
@@ -391,7 +421,7 @@ class BookFeedback(Resource):
             return {"message": f"Feedback for {book.name} submitted successfully"}, 200
 
         except Exception as e:
-            return {"Error": f"{e}"}, 500
+            return {"error": f"{e}"}, 500
 
 class EditBookInfo(Resource):
     @login_required
@@ -415,7 +445,7 @@ class EditBookInfo(Resource):
             if not book_author:
                 return {"message": f"ISBN does not exist or Author {oldAuthor} does not exist"}, 404
             
-            all_book_entries_in_book_author = BookAuthorModel.query.filter_by(isbn = oldIsbn).update({"isbn": newIsbn})
+            BookAuthorModel.query.filter_by(isbn = oldIsbn).update({"isbn": newIsbn})
             
             section = SectionModel.query.filter_by(name = section_name).first()
             if not section:
@@ -433,8 +463,23 @@ class EditBookInfo(Resource):
             return {"message": "Book info changed successfully"}
         
         except Exception as e:
-            return {"Error": f"{e}"}
+            return {"error": f"{e}"}
+        
+class RevokeBookAccess(Resource):
+    @login_required
+    @check_role(role = "Librarian")
+    def post(self):
+        args = reqParser.parse_args()
+        try:
+            username = args["username"]
+            isbn = args["isbn"]
+            BookIssueModel.query.filter_by(username = username, isbn = isbn).delete()
+            db.session.commit()
 
+            return {"message": f"Revoked access of user {username} from book with isbn {isbn}"}
+
+        except Exception as e:
+            return {"error": f"{e}"}
 
 api.add_resource(AddUser, "/api/addUser")
 api.add_resource(Login, "/api/login")
@@ -443,12 +488,14 @@ api.add_resource(Logout, "/api/logout")
 api.add_resource(AddSection, '/api/addSection')
 api.add_resource(AddBookAuthor, '/api/addBookAuthor')
 api.add_resource(ViewSections, '/api/viewSections')
-api.add_resource(ViewBooks, '/api/viewBooks')
+api.add_resource(ViewAllBooks, '/api/viewAllBooks')
 api.add_resource(RequestBook, '/api/requestBook')
 api.add_resource(IssueBook, '/api/issueBook')
 api.add_resource(ReturnBook, "/api/returnBook")
 api.add_resource(BookFeedback, "/api/bookFeedback")
 api.add_resource(EditBookInfo, "/api/editBookInfo")
+api.add_resource(ViewIssuedBooks, "/api/viewIssuedBooks")
+api.add_resource(RevokeBookAccess, "/api/revokeBookAccess")
 
 if __name__ == "__main__":
     app.run(debug=True)
