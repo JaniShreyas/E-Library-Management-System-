@@ -45,7 +45,7 @@ class BookModel(db.Model):
     __tablename__ = "book"
     isbn = db.Column(db.String(13), primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    # page_count = db.Column(db.Integer, nullable = False)
+    page_count = db.Column(db.Integer, nullable = False)
     content = db.Column(db.String(300), nullable=False)
     section_id = db.Column(db.Integer, db.ForeignKey("section.id"), nullable=False)
 
@@ -230,6 +230,7 @@ class AddBookAuthor(Resource):
             args = reqParser.parse_args()
             isbn = args["isbn"]
             book_name = args["book_name"]
+            page_count = args["page_count"]
             section_name = args["section_name"]
             content_path = args["content"]
             author_names: str = args["author_names"]
@@ -245,7 +246,7 @@ class AddBookAuthor(Resource):
             if book:
                 return {"message": "Book already exists"}, 400
             
-            book = BookModel(isbn=isbn, name=book_name, content=content_path, section_id=section.id)  # type: ignore
+            book = BookModel(isbn=isbn, name=book_name, page_count = page_count, content=content_path, section_id=section.id)  # type: ignore
             db.session.add(book)
 
             for author_name in author_names_list:
@@ -287,7 +288,7 @@ class ViewAllBooks(Resource):
                 if not section:
                     return {"message": "Section not found"}, 404
                 
-                outputList.append((book.isbn, book.name, book.content, book.section_id, section.name))
+                outputList.append((book.isbn, book.name, book.page_count, book.content, book.section_id, section.name))
             
             return {"Books": outputList}
         
@@ -346,16 +347,16 @@ class IssueBook(Resource):
 
 class ViewIssuedBooks(Resource):
     @login_required
-    def post(self):
+    def get(self):
         info = UserInfoModel.query.filter_by(username = current_user.username).first()
         if not info:
             return {"message": "User info does not exist"}, 404
         
-        args = reqParser.parse_args()
         try:
-            username = args["username"]
             if info.role == "General":
                 username = current_user.username
+            else:
+                username = request.args.get("username", default="testUname")
             
             book_issue = BookIssueModel.query.filter_by(username = username).all()
 
@@ -367,7 +368,7 @@ class ViewIssuedBooks(Resource):
                 section = SectionModel.query.filter_by(id = book.section_id).first()
                 if not section:
                     return {"message": "Section does not exist"}, 404
-                outputList.append((book.isbn, book.name, book.content, book.section_id, section.name))
+                outputList.append((book.isbn, book.name, book.page_count, book.content, book.section_id, section.name))
             
             return {"Books": outputList}
 
@@ -426,44 +427,59 @@ class BookFeedback(Resource):
 class EditBookInfo(Resource):
     @login_required
     @check_role(role = "Librarian")
-    def post(self):
+    def put(self):
         args = reqParser.parse_args()
         try:
             old_to_new_isbn = args["old_to_new_isbn"]
             name = args["book_name"]
             old_to_new_author = args["old_to_new_author"]
-            # page_count = args["page_count"]
+            page_count = args["page_count"]
+            content_path = args["content"]
             section_name = args["section_name"]
             oldIsbn, newIsbn = tuple(old_to_new_isbn.split(','))
-            oldAuthor, newAuthor = tuple(old_to_new_author.split(','))
+
+            oldAuthor, newAuthor = None, None
+            if old_to_new_author:
+                oldAuthor, newAuthor = tuple(old_to_new_author.split(','))
 
             book = BookModel.query.filter_by(isbn = oldIsbn).first()
             if not book:
                 return {"message": f"Book does not exist"}, 404
             
-            book_author = BookAuthorModel.query.filter_by(isbn = oldIsbn, author_name = oldAuthor).first()
-            if not book_author:
-                return {"message": f"ISBN does not exist or Author {oldAuthor} does not exist"}, 404
+            if oldAuthor:
+                book_author = BookAuthorModel.query.filter_by(isbn = oldIsbn, author_name = oldAuthor).first()
+                if not book_author:
+                    return {"message": f"ISBN does not exist or Author {oldAuthor} does not exist"}, 404
             
             BookAuthorModel.query.filter_by(isbn = oldIsbn).update({"isbn": newIsbn})
             
             section = SectionModel.query.filter_by(name = section_name).first()
-            if not section:
-                return {"message": f"Section {section_name} does not exist"}, 404
             
             book.isbn = newIsbn
-            book.name = name
-            book.section_id = section.id
-            #book.page_count = page_count
 
-            book_author.isbn = newIsbn
-            book_author.author_name = newAuthor
+            if name:
+                book.name = name
+            
+            if page_count:
+                book.page_count = page_count
+
+            if section:
+                book.section_id = section.id
+
+            if content_path:
+                book.content = content_path
+
+            book_author = None
+            if book_author:
+                book_author.isbn = newIsbn
+                book_author.author_name = newAuthor
+
             db.session.commit()
 
             return {"message": "Book info changed successfully"}
         
         except Exception as e:
-            return {"error": f"{e}"}
+            return {"error": f"{e}"}, 500
         
 class RevokeBookAccess(Resource):
     @login_required
@@ -479,7 +495,75 @@ class RevokeBookAccess(Resource):
             return {"message": f"Revoked access of user {username} from book with isbn {isbn}"}
 
         except Exception as e:
-            return {"error": f"{e}"}
+            return {"error": f"{e}"}, 500
+    
+class RemoveSection(Resource):
+    @login_required
+    @check_role(role = "Librarian")
+    def delete(self):
+        args = reqParser.parse_args()
+        try:
+            name = args["section_name"]
+            section = SectionModel.query.filter_by(name = name).first()
+            if not section: 
+                return {"message": f"Section {name} does not exist"}, 404
+            
+            BookModel.query.filter_by(section_id = section.id).update({"section_id": 0})
+            SectionModel.query.filter_by(name = name).delete()
+            db.session.commit()
+
+            return {"message": f"Section {name} deleted successfully"}, 200
+
+        except Exception as e:
+            return {"error": f"{e}"}, 500
+
+class RemoveBook(Resource):
+    @login_required
+    @check_role(role = "Librarian")
+    def delete(self):
+        args = reqParser.parse_args()
+        try:
+            isbn = args["isbn"]
+            book = BookModel.query.filter_by(isbn = isbn).first()
+            if not book:
+                return {"message": f"Book with isbn {isbn} does not exist"}
+            
+            BookAuthorModel.query.filter_by(isbn = isbn).delete()
+            BookModel.query.filter_by(isbn = isbn).delete()
+            db.session.commit()
+
+            return {"message": f"Book {book.name} deleted successfully"}
+        
+        except Exception as e:
+            return {"error": f"{e}"}, 500
+        
+# class FindBook(Resource):
+#     @login_required
+#     def get(self):
+#         isbn = request.args.get("isbn", default = None)
+#         book_name = request.args.get("name", default=None)
+#         author_name = request.args.get("author_name", default=None)
+        
+#         book, books, book_author = None, None, None
+#         if isbn:
+#             book = BookModel.query.filter_by(isbn = isbn).first()
+#         elif book_name:
+#             books = BookModel.query.filter_by(name = book_name)
+#         elif author_name:
+#             book_author = BookAuthorModel.query.filter_by(author_name = author_name)
+#         else:
+#             books = BookModel.query.all()
+        
+#         if book:
+#             section = SectionModel.query.filter_by(id = book.section_id).first()
+#             if not section:
+#                 return {"message": "Section does not exist"}, 404
+#             return {"Books": [book.isbn, book.name, book.page_count, book.section_id]}
+        
+#         elif books:
+
+
+
 
 api.add_resource(AddUser, "/api/addUser")
 api.add_resource(Login, "/api/login")
@@ -496,6 +580,8 @@ api.add_resource(BookFeedback, "/api/bookFeedback")
 api.add_resource(EditBookInfo, "/api/editBookInfo")
 api.add_resource(ViewIssuedBooks, "/api/viewIssuedBooks")
 api.add_resource(RevokeBookAccess, "/api/revokeBookAccess")
+api.add_resource(RemoveSection, "/api/removeSection")
+api.add_resource(RemoveBook, "/api/removeBook")
 
 if __name__ == "__main__":
     app.run(debug=True)
