@@ -536,34 +536,62 @@ class RemoveBook(Resource):
         
         except Exception as e:
             return {"error": f"{e}"}, 500
+
+class FindBook(Resource):
+    @login_required
+    def get(self):
+        try:
+            isbn = request.args.get("isbn", default = None)
+            book_name = request.args.get("name", default=None)
+            author_name = request.args.get("author_name", default=None)
+            
+            books = None
+            if isbn:
+                books = BookModel.query.filter_by(isbn = isbn).all()
+            elif book_name:
+                books = BookModel.query.filter_by(name = book_name).all()
+            elif author_name:
+                books = BookModel.query.join(BookAuthorModel, BookAuthorModel.isbn == BookModel.isbn)\
+                        .filter_by(author_name = author_name)\
+                        .with_entities(BookModel.isbn, BookModel.name, BookModel.page_count, BookModel.content, BookModel.section_id).all()
+            
+            if not books:
+                return {"message": "No book found"}, 404
+
+            outputList = []
+            for book in books:
+                section = SectionModel.query.filter_by(id = book.section_id).first()
+                if not section: 
+                    return {"message": "Section does not exist"}, 404
+                outputList.append([book.isbn, book.name, book.page_count, book.content, section.name])
+            return {"Books": outputList}
         
-# class FindBook(Resource):
-#     @login_required
-#     def get(self):
-#         isbn = request.args.get("isbn", default = None)
-#         book_name = request.args.get("name", default=None)
-#         author_name = request.args.get("author_name", default=None)
-        
-#         book, books, book_author = None, None, None
-#         if isbn:
-#             book = BookModel.query.filter_by(isbn = isbn).first()
-#         elif book_name:
-#             books = BookModel.query.filter_by(name = book_name)
-#         elif author_name:
-#             book_author = BookAuthorModel.query.filter_by(author_name = author_name)
-#         else:
-#             books = BookModel.query.all()
-        
-#         if book:
-#             section = SectionModel.query.filter_by(id = book.section_id).first()
-#             if not section:
-#                 return {"message": "Section does not exist"}, 404
-#             return {"Books": [book.isbn, book.name, book.page_count, book.section_id]}
-        
-#         elif books:
+        except Exception as e:
+            return {"error": f"{e}"}, 500
+    
+class FindSection(Resource):
+    @login_required
+    def get(self):
+        try:
+            id = request.args.get("section_id")
+            name = request.args.get("section_name")
+
+            section = None
+            if id:
+                section = SectionModel.query.filter_by(id = id).first()
+            
+            elif name:
+                section = SectionModel.query.filter_by(name = name).first()
+
+            if not section:
+                return {"message": "No section found"}, 404
 
 
-
+            return {"id": section.id, "name": section.name, "date_created": str(section.date_created), "description": section.description}
+        
+        except Exception as e:
+            return {"error": f"{e}"}, 500
+        
 
 api.add_resource(AddUser, "/api/addUser")
 api.add_resource(Login, "/api/login")
@@ -582,6 +610,8 @@ api.add_resource(ViewIssuedBooks, "/api/viewIssuedBooks")
 api.add_resource(RevokeBookAccess, "/api/revokeBookAccess")
 api.add_resource(RemoveSection, "/api/removeSection")
 api.add_resource(RemoveBook, "/api/removeBook")
+api.add_resource(FindBook, "/api/findBook")
+api.add_resource(FindSection, "/api/findSection")
 
 if __name__ == "__main__":
     app.run(debug=True)
