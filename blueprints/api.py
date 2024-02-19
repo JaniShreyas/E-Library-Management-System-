@@ -12,8 +12,8 @@ api = Api(api_bp)
 # Parse Args
 reqParser = reqparse.RequestParser()
 
-reqParser.add_argument("username", type=str, location = 'form')
-reqParser.add_argument("password", type=str, location = 'form')
+reqParser.add_argument("username", type=str)
+reqParser.add_argument("password", type=str)
 reqParser.add_argument("first_name", type=str)
 reqParser.add_argument("last_name", type=str)
 reqParser.add_argument("role", type=str)

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Librarian Login Page</title>
+    <title>{{role}} Login Page</title>
     <style>
         body {
             font-family: Ubuntu, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -33,9 +33,19 @@
             width: 300px;
             margin: 0 auto;
             padding: 20px;
-            border: 1px solid #ccc;
+            /* border: 1px solid #ccc; */
             border-radius: 5px;
-            background-color: #f2f2f2;
+
+            background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0)
+  );
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(52, 51, 51, 0.37);
 
         }
 
@@ -59,6 +69,10 @@
             margin-top: 20px;
         }
 
+        input.submit:hover {
+            background-color: rgb(88, 87, 87);
+        }
+
         .loginsvg {
             position: fixed;
             bottom: 0;
@@ -71,13 +85,13 @@
 
 <body>
     <div class="wrapper">
-        <h1 class="libraryLoginHeading">Librarian Login</h1>
+        <h1 class="libraryLoginHeading">{{role.capitalize()}} Login</h1>
         <div class="libraryLoginForm">
-            <form class="libraryLoginForm" action="/api/login" method="post">
+            <form class="libraryLoginForm" action="/{{role}}Login" method="post">
                 <label for="username">Username</label>
-                <input id="username" type="text"></input>
+                <input id="username" type="text" name="username"></input>
                 <label for="password">Password</label>
-                <input id="password" type="password"></input>
+                <input id="password" type="password" name="password"></input>
                 <input class="submit" type="submit">
             </form>
         </div>
