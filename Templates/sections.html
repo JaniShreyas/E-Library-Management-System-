@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        {% for section in sections: %}
+        <div>{{("section_id", section.id), ("name", section.name), 
+            ("date_created", section.date_created), ("description", section.description)}}</p>
+        {% endfor %}
+    </div>
+
+    <div>
+        <button onclick="window.location.href='/addSection'">Add Section</button>
+    </div>
+</body>
+</html>

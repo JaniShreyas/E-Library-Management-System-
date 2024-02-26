@@ -1,8 +1,10 @@
 from flask import Flask, redirect, render_template, request,  flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from sqlalchemy import desc
 from models import db, UserLoginModel, UserInfoModel, SectionModel, BookModel, BookAuthorModel, BookRequestsModel, BookIssueModel, BookFeedbackModel
 import os
-from blueprints.api import api_bp, login_manager
+from blueprints.api import api_bp, check_role, login_manager, check_role
+from datetime import datetime, timedelta
 
 currentDirectory = os.path.dirname(os.path.realpath(__file__))
 
@@ -56,7 +58,7 @@ def librarianLogin():
         flash(f"Incorrect Password")
         return redirect("/librarianLogin")
 
-    return redirect("userInfo")
+    return redirect("/dashboard/sections")
 
 @app.route('/generalLogin', methods = ['GET', 'POST'])
 def generalLogin():
@@ -87,18 +89,53 @@ def generalLogin():
         flash(f"Incorrect Password")
         return redirect("/generalLogin")
 
-    return redirect("userInfo")
+    return redirect("/dashboard/sections")
 
 @app.route('/logout', methods = ['GET'])
 def logout():
     logout_user()
     return redirect("/")
 
-@app.route('/userInfo', methods = ['GET'])
-def userInfo():
-    return render_template('userInfo.html', username = current_user.username, password = current_user.password)
+@app.route('/addUser', methods=['GET', 'POST'])
+def addUser():
+    if request.method == 'GET':
+        return render_template('addUser.html')
+    
+    username = request.form.get("username")
+    password = request.form.get("password")
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
+    role = "General"
 
+    userLogin = UserLoginModel(username = username, password = password)  #type: ignore
+    userInfo = UserInfoModel(username = username, first_name = first_name, last_name = last_name, role = role)  #type: ignore
+    db.session.add(userLogin)
+    db.session.add(userInfo)
+    db.session.commit()
 
+    return redirect('/dashboard/sections')
+
+@app.route('/dashboard/sections', methods = ['GET'])
+@login_required
+def sections():
+    sections = SectionModel.query.all()
+    return render_template('sections.html', sections = sections)
+
+@app.route('/addSection', methods = ['GET', 'POST'])
+@login_required
+@check_role(role = 'Librarian')
+def addSection():
+    if request.method == 'GET':
+        return render_template('addSection.html')
+    
+    name = request.form.get('name')
+    description = request.form.get('description')
+    section = SectionModel(name = name, description = description, date_created = datetime.now())  #type: ignore
+
+    db.session.add(section)
+    db.session.commit()
+
+    return redirect('/dashboard/sections')
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -94,6 +94,9 @@
                 <input id="password" type="password" name="password"></input>
                 <input class="submit" type="submit">
             </form>
+            {% if role == "general": %}
+            <button onclick="window.location.href='/addUser'">Register</button>
+            {% endif %}
         </div>
     </div>
     <div class="loginsvg">
