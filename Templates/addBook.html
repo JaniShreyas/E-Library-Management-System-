@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Books</title>
+</head>
+<body>
+    <form action="/{{section}}/addBook" method="POST">
+        <label for="isbn">ISBN</label>
+        <input id="isbn" type="text" name="isbn"></input>
+        <label for="book_name">Book Name</label>
+        <input id="book_name" type="text" name="book_name"></input>
+        <label for="page_count">Page Count</label>
+        <input id="page_count" type="text" name="page_count"></input>
+        <label for="content">Content</label>
+        <input id="content" type="text" name="content"></input>
+        <label for="publisher">Publisher</label>
+        <input id="publisher" type="text" name="publisher"></input>
+        <label for="author_names">Author Names</label>
+        <input id="author_names" type="text" name="author_names"></input>
+        <input class="submit" type="submit">
+    </form>
+</body>
+</html>

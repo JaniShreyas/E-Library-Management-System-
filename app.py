@@ -5,6 +5,7 @@ from models import db, UserLoginModel, UserInfoModel, SectionModel, BookModel, B
 import os
 from blueprints.api import api_bp, check_role, login_manager, check_role
 from datetime import datetime, timedelta
+from typing import List
 
 currentDirectory = os.path.dirname(os.path.realpath(__file__))
 
@@ -136,6 +137,61 @@ def addSection():
     db.session.commit()
 
     return redirect('/dashboard/sections')
+
+@app.route('/<section_name_from_url>/addBook', methods = ['GET', 'POST'])
+@login_required
+@check_role(role="Librarian")
+def addBook(section_name_from_url: str):
+    if request.method == 'GET':
+        return render_template('addBook.html', section = section_name_from_url)
+
+    isbn = request.form.get('isbn')
+    book_name = request.form.get('book_name')
+    page_count = request.form.get('page_count')
+    content_path = request.form.get('content')
+    publisher = request.form.get('publisher')
+    section_name = section_name_from_url.capitalize()
+    author_names = request.form.get('author_names')
+
+
+    section = SectionModel.query.filter_by(name=section_name).first()
+
+    if not section:
+        return {"message": "Section does not exist"}, 404
+    
+    if not author_names:
+        return {"message": "Author names not given"}, 404
+    
+    author_names_list: List[str] = author_names.split(",")
+
+    
+    book = BookModel.query.filter_by(isbn=isbn).first()
+
+    if book:
+        return {"message": "Book already exists"}, 400
+    
+    book = BookModel(isbn=isbn, name=book_name, page_count = page_count, content=content_path, publisher = publisher, section_id=section.id)  # type: ignore
+    db.session.add(book)
+
+    for author_name in author_names_list:
+        author = BookAuthorModel(isbn=isbn, author_name=author_name)  # type: ignore
+        db.session.add(author)
+    db.session.commit()
+
+    return redirect('/dashboard/sections')
+
+@app.route('/<section_name_from_url>/viewBooks', methods=['GET'])
+def viewBooks(section_name_from_url):
+    
+    section_name = section_name_from_url.capitalize()
+    section = SectionModel.query.filter_by(name = section_name).first()
+
+    if not section:
+        return {"message": "Section not found"}
+    
+    books = BookModel.query.filter_by(section_id = section.id)
+
+    return render_template('viewBooks.html', books = books)
 
 if __name__ == "__main__":
     app.run(debug=True)

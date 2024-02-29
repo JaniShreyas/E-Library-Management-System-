@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Sections</title>
 </head>
 <body>
     <div>
         {% for section in sections: %}
         <div>{{("section_id", section.id), ("name", section.name), 
-            ("date_created", section.date_created), ("description", section.description)}}</p>
+            ("date_created", section.date_created), ("description", section.description)}}</div>
+        <button onclick = "window.location.href='/{{section.name}}/addBook'">Add Book</button>
+        <button onclick = "window.location.href='/{{section.name}}/viewBooks'">View Books</button>
         {% endfor %}
     </div>
 
