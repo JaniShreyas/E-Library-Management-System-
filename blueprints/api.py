@@ -1,7 +1,17 @@
 from flask import Blueprint, request
 from flask_restful import Resource, reqparse, Api
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from models import db, UserLoginModel, UserInfoModel, SectionModel, BookModel, BookAuthorModel, BookRequestsModel, BookIssueModel, BookFeedbackModel
+from models import (
+    db,
+    UserLoginModel,
+    UserInfoModel,
+    SectionModel,
+    BookModel,
+    BookAuthorModel,
+    BookRequestsModel,
+    BookIssueModel,
+    BookFeedbackModel,
+)
 from typing import List, Callable
 from datetime import datetime, timedelta
 
@@ -20,17 +30,18 @@ reqParser.add_argument("role", type=str)
 
 reqParser.add_argument("isbn", type=str)
 reqParser.add_argument("book_name", type=str)
-reqParser.add_argument("page_count", type = int)
+reqParser.add_argument("page_count", type=int)
 reqParser.add_argument("section_name", type=str)
 reqParser.add_argument("description", type=str)
 reqParser.add_argument("content", type=str)
-reqParser.add_argument("publisher", type = str)
+reqParser.add_argument("publisher", type=str)
 reqParser.add_argument("author_names", type=str)
 reqParser.add_argument("issue_time", type=int)
 
-reqParser.add_argument("feedback", type = str)
-reqParser.add_argument("old_to_new_author", type = str)
-reqParser.add_argument("old_to_new_isbn", type = str)
+reqParser.add_argument("feedback", type=str)
+reqParser.add_argument("old_to_new_author", type=str)
+reqParser.add_argument("old_to_new_isbn", type=str)
+
 
 # Decorator function to verify role
 def check_role(role: str):
@@ -45,15 +56,20 @@ def check_role(role: str):
                 return {"message": f"Only {role} user has access here"}, 400
             else:
                 return function(*args, **kwargs)
+
         wrapper.__name__ = function.__name__
         return wrapper
+
     return decorator
 
+
 login_manager = LoginManager()
+
 
 @login_manager.user_loader
 def load_user(id):
     return UserLoginModel.query.get(id)
+
 
 class AddUser(Resource):
     def post(self):
@@ -107,9 +123,7 @@ class Login(Resource):
                 if userLogin.password == password:
                     # Password matches
                     login_user(userLogin)
-                    return {
-                        "message": f"{role} user Login successful. Welcome {info.first_name}"
-                    }, 200
+                    return {"message": f"{role} user Login successful. Welcome {info.first_name}"}, 200
                 else:
                     # Password does not match
                     return {"message": "Incorrect password"}, 400
@@ -119,6 +133,7 @@ class Login(Resource):
 
         except Exception as e:
             return {"error": f"{e}"}, 500
+
 
 class UserInfo(Resource):
     @login_required
@@ -135,26 +150,34 @@ class UserInfo(Resource):
 
         last_name = info.last_name if info.last_name else ""
 
-        return {"username": userLogin.username, "password": userLogin.password, "first_name": info.first_name, "last_name": last_name, "role": info.role}, 200
+        return {
+            "username": userLogin.username,
+            "password": userLogin.password,
+            "first_name": info.first_name,
+            "last_name": last_name,
+            "role": info.role,
+        }, 200
+
 
 class Logout(Resource):
     def get(self):
         logout_user()
         return {"message": "Logout successful"}, 200
-    
+
+
 class AddSection(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def post(self):
         args = reqParser.parse_args()
         try:
             name = args["section_name"]
             description = args["description"]
 
-            section = SectionModel.query.filter_by(name = name).first()
-            if section: 
+            section = SectionModel.query.filter_by(name=name).first()
+            if section:
                 return {"message": f"Section {name} already exists"}, 400
-            
+
             date_created = datetime.now()
 
             section = SectionModel(name=name, date_created=date_created, description=description)  # type: ignore
@@ -166,9 +189,10 @@ class AddSection(Resource):
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class AddBookAuthor(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def post(self):
         try:
             args = reqParser.parse_args()
@@ -185,13 +209,13 @@ class AddBookAuthor(Resource):
 
             if not section:
                 return {"message": "Section does not exist"}, 404
-            
+
             book = BookModel.query.filter_by(isbn=isbn).first()
 
             if book:
                 return {"message": "Book already exists"}, 400
-            
-            book = BookModel(isbn=isbn, name=book_name, page_count = page_count, content=content_path, publisher = publisher, section_id=section.id)  # type: ignore
+
+            book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, publisher=publisher, section_id=section.id)  # type: ignore
             db.session.add(book)
 
             for author_name in author_names_list:
@@ -204,21 +228,29 @@ class AddBookAuthor(Resource):
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class ViewSections(Resource):
     @login_required
     def get(self):
         try:
             sections = list(SectionModel.query.all())
-            
+
             if not sections:
                 return {"message": "No section exists"}, 404
-            
-            return [{"section_id": section.id, "name": section.name, 
-                                 "date_created": str(section.date_created), "description": section.description} 
-                                 for section in sections], 200
+
+            return [
+                {
+                    "section_id": section.id,
+                    "name": section.name,
+                    "date_created": str(section.date_created),
+                    "description": section.description,
+                }
+                for section in sections
+            ], 200
 
         except Exception as e:
             return {"error": f"{e}"}, 500
+
 
 class ViewAllBooks(Resource):
     @login_required
@@ -228,25 +260,34 @@ class ViewAllBooks(Resource):
 
             if not books:
                 return {"message": "No book exists"}, 404
-            
+
             outputList = []
             for book in books:
-                section = SectionModel.query.filter_by(id = book.section_id).first()
+                section = SectionModel.query.filter_by(id=book.section_id).first()
                 if not section:
                     return {"message": "Section not found"}, 404
-                
-                outputList.append({"isbn": book.isbn, "name": book.name, "page_count": book.page_count, 
-                                   "content": book.content, "publisher": book.publisher, "section_id": book.section_id, 
-                                   "section_name": section.name})
-            
+
+                outputList.append(
+                    {
+                        "isbn": book.isbn,
+                        "name": book.name,
+                        "page_count": book.page_count,
+                        "content": book.content,
+                        "publisher": book.publisher,
+                        "section_id": book.section_id,
+                        "section_name": section.name,
+                    }
+                )
+
             return outputList
-        
+
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class RequestBook(Resource):
     @login_required
-    @check_role(role = "General")
+    @check_role(role="General")
     def post(self):
         args = reqParser.parse_args()
         try:
@@ -256,22 +297,22 @@ class RequestBook(Resource):
 
             if issue_time > 7:
                 return {"message": "Issue time cannot be greater than 7"}
-            
+
             if issue_time < 1:
                 return {"message": "Issue time must be greater than 0"}
 
-            book_request = BookRequestsModel.query.filter_by(isbn = isbn, username = current_user.username).first()
+            book_request = BookRequestsModel.query.filter_by(isbn=isbn, username=current_user.username).first()
             if book_request:
                 return {"message": "Book already requested"}, 400
 
-            book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = current_user.username).first()
+            book_issue = BookIssueModel.query.filter_by(isbn=isbn, username=current_user.username).first()
             if book_issue:
                 return {"message": "Book has already been issued"}, 400
 
             if not book:
                 return {"message": "Book does not exist"}, 404
-            
-            book_request = BookRequestsModel(isbn=isbn, username=current_user.username, date_of_request=datetime.now(), issue_time = issue_time)  # type: ignore
+
+            book_request = BookRequestsModel(isbn=isbn, username=current_user.username, date_of_request=datetime.now(), issue_time=issue_time)  # type: ignore
             db.session.add(book_request)
             db.session.commit()
 
@@ -279,21 +320,26 @@ class RequestBook(Resource):
 
         except Exception as e:
             return {"error": f"{e}"}, 500
-        
+
+
 class ViewBookRequests(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def get(self):
         try:
             book_requests = BookRequestsModel.query.all()
-            return [{"isbn": book_request.isbn, "username": book_request.username, "issue_time": book_request.issue_time} for book_request in book_requests]
-        
+            return [
+                {"isbn": book_request.isbn, "username": book_request.username, "issue_time": book_request.issue_time}
+                for book_request in book_requests
+            ]
+
         except Exception as e:
             return {"error": f"{e}"}, 500
-        
+
+
 class IssueBook(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def post(self):
         args = reqParser.parse_args()
         try:
@@ -304,14 +350,14 @@ class IssueBook(Resource):
 
             if not book_request:
                 return {"message": "Book request does not exist"}, 404
-            
+
             book_issue = BookIssueModel(isbn=isbn, username=username, date_of_issue=datetime.now(), date_of_return=datetime.now() + timedelta(days=book_request.issue_time))  # type: ignore
             db.session.add(book_issue)
 
             BookRequestsModel.query.filter_by(isbn=isbn, username=username).delete()
             db.session.commit()
-            
-            book = BookModel.query.filter_by(isbn = isbn).first()
+
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
 
@@ -320,112 +366,127 @@ class IssueBook(Resource):
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class ViewIssuedBooks(Resource):
     @login_required
     def get(self):
-        info = UserInfoModel.query.filter_by(username = current_user.username).first()
+        info = UserInfoModel.query.filter_by(username=current_user.username).first()
         if not info:
             return {"message": "User info does not exist"}, 404
-        
+
         try:
             if info.role == "General":
                 username = current_user.username
             else:
                 username = request.args.get("username", default="testUname")
-            
-            book_issue = BookIssueModel.query.filter_by(username = username).all()
+
+            book_issue = BookIssueModel.query.filter_by(username=username).all()
 
             outputList = []
             for issued_book in book_issue:
-                book = BookModel.query.filter_by(isbn = issued_book.isbn).first()
+                book = BookModel.query.filter_by(isbn=issued_book.isbn).first()
                 if not book:
                     return {"message": "Book does not exist"}, 404
-                section = SectionModel.query.filter_by(id = book.section_id).first()
+                section = SectionModel.query.filter_by(id=book.section_id).first()
                 if not section:
                     return {"message": "Section does not exist"}, 404
-                outputList.append({"isbn": book.isbn, "name": book.name, "page_count": book.page_count, 
-                                   "content": book.content, "publisher": book.publisher, "section_id": book.section_id, 
-                                   "section_name": section.name})
-            
+                outputList.append(
+                    {
+                        "isbn": book.isbn,
+                        "name": book.name,
+                        "page_count": book.page_count,
+                        "content": book.content,
+                        "publisher": book.publisher,
+                        "section_id": book.section_id,
+                        "section_name": section.name,
+                    }
+                )
+
             return outputList
 
         except Exception as e:
             return {"error": f"{e}"}
-    
+
+
 class ReturnBook(Resource):
     @login_required
-    @check_role(role = "General")
+    @check_role(role="General")
     def post(self):
         args = reqParser.parse_args()
         try:
             isbn = args["isbn"]
             username = current_user.username
-            book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = username).first()
-            
+            book_issue = BookIssueModel.query.filter_by(isbn=isbn, username=username).first()
+
             if not book_issue:
                 return {"message": f"Book with isbn {isbn} is not issued by user {username}"}, 404
-            
-            book = BookModel.query.filter_by(isbn = isbn).first()
+
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
-            
-            BookIssueModel.query.filter_by(isbn = isbn, username = username).delete()
+
+            BookIssueModel.query.filter_by(isbn=isbn, username=username).delete()
             db.session.commit()
 
-
             return {"message": f"Book {book.name} has been returned"}, 200
-        
+
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class BookFeedback(Resource):
     @login_required
-    @check_role(role = "General")
+    @check_role(role="General")
     def post(self):
         args = reqParser.parse_args()
         try:
             isbn = args["isbn"]
             feedback = args["feedback"]
-            
+
             username = current_user.username
 
-            book_feedback = BookFeedbackModel(isbn = isbn, username = username, feedback = feedback)  # type: ignore
+            book_feedback = BookFeedbackModel(isbn=isbn, username=username, feedback=feedback)  # type: ignore
             db.session.add(book_feedback)
             db.session.commit()
 
-            book = BookModel.query.filter_by(isbn = isbn).first()
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
-            
+
             return {"message": f"Feedback for {book.name} submitted successfully"}, 200
 
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class ViewFeedbacks(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def get(self):
         try:
             isbn = request.args.get("isbn", default=None)
 
             feedbacks = None
             if isbn:
-                feedbacks = BookFeedbackModel.query.filter_by(isbn = isbn).all()
+                feedbacks = BookFeedbackModel.query.filter_by(isbn=isbn).all()
             else:
                 feedbacks = BookFeedbackModel.query.all()
 
             if not feedbacks:
                 return {"message": "No feedbacks of this book exist"}
-            
-            return [{"isbn": feedback.isbn, "username": feedback.username,  "feedback": feedback.feedback} for feedback in feedbacks]
-        
+
+            return [
+                {"isbn": feedback.isbn, "username": feedback.username, "feedback": feedback.feedback}
+                for feedback in feedbacks
+            ]
+
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class EditBookInfo(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def put(self):
         args = reqParser.parse_args()
         try:
@@ -436,30 +497,30 @@ class EditBookInfo(Resource):
             content_path = args["content"]
             publisher = args["publisher"]
             section_name = args["section_name"]
-            oldIsbn, newIsbn = tuple(old_to_new_isbn.split(','))
+            oldIsbn, newIsbn = tuple(old_to_new_isbn.split(","))
 
             oldAuthor, newAuthor = None, None
             if old_to_new_author:
-                oldAuthor, newAuthor = tuple(old_to_new_author.split(','))
+                oldAuthor, newAuthor = tuple(old_to_new_author.split(","))
 
-            book = BookModel.query.filter_by(isbn = oldIsbn).first()
+            book = BookModel.query.filter_by(isbn=oldIsbn).first()
             if not book:
                 return {"message": f"Book does not exist"}, 404
-            
+
             if oldAuthor:
-                book_author = BookAuthorModel.query.filter_by(isbn = oldIsbn, author_name = oldAuthor).first()
+                book_author = BookAuthorModel.query.filter_by(isbn=oldIsbn, author_name=oldAuthor).first()
                 if not book_author:
                     return {"message": f"ISBN does not exist or Author {oldAuthor} does not exist"}, 404
-            
-            BookAuthorModel.query.filter_by(isbn = oldIsbn).update({"isbn": newIsbn})
-            
-            section = SectionModel.query.filter_by(name = section_name).first()
-            
+
+            BookAuthorModel.query.filter_by(isbn=oldIsbn).update({"isbn": newIsbn})
+
+            section = SectionModel.query.filter_by(name=section_name).first()
+
             book.isbn = newIsbn
 
             if name:
                 book.name = name
-            
+
             if page_count:
                 book.page_count = page_count
 
@@ -480,44 +541,46 @@ class EditBookInfo(Resource):
             db.session.commit()
 
             return {"message": "Book info changed successfully"}
-        
+
         except Exception as e:
             return {"error": f"{e}"}, 500
-        
+
+
 class RevokeBookAccess(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def post(self):
         args = reqParser.parse_args()
         try:
             username = args["username"]
             isbn = args["isbn"]
 
-            book_issue = BookIssueModel.query.filter_by(username = username, isbn = isbn).first()
+            book_issue = BookIssueModel.query.filter_by(username=username, isbn=isbn).first()
             if not book_issue:
                 return {"message": "Book Issue does not exist"}, 404
 
-            BookIssueModel.query.filter_by(username = username, isbn = isbn).delete()
+            BookIssueModel.query.filter_by(username=username, isbn=isbn).delete()
             db.session.commit()
 
             return {"message": f"Revoked access of user {username} from book with isbn {isbn}"}
 
         except Exception as e:
             return {"error": f"{e}"}, 500
-    
+
+
 class RemoveSection(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def delete(self):
         args = reqParser.parse_args()
         try:
             name = args["section_name"]
-            section = SectionModel.query.filter_by(name = name).first()
-            if not section: 
+            section = SectionModel.query.filter_by(name=name).first()
+            if not section:
                 return {"message": f"Section {name} does not exist"}, 404
-            
-            BookModel.query.filter_by(section_id = section.id).update({"section_id": 0})
-            SectionModel.query.filter_by(name = name).delete()
+
+            BookModel.query.filter_by(section_id=section.id).update({"section_id": 0})
+            SectionModel.query.filter_by(name=name).delete()
             db.session.commit()
 
             return {"message": f"Section {name} deleted successfully"}, 200
@@ -525,63 +588,79 @@ class RemoveSection(Resource):
         except Exception as e:
             return {"error": f"{e}"}, 500
 
+
 class RemoveBook(Resource):
     @login_required
-    @check_role(role = "Librarian")
+    @check_role(role="Librarian")
     def delete(self):
         args = reqParser.parse_args()
         try:
             isbn = args["isbn"]
-            book = BookModel.query.filter_by(isbn = isbn).first()
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": f"Book with isbn {isbn} does not exist"}
-            
-            BookAuthorModel.query.filter_by(isbn = isbn).delete()
-            BookModel.query.filter_by(isbn = isbn).delete()
+
+            BookAuthorModel.query.filter_by(isbn=isbn).delete()
+            BookModel.query.filter_by(isbn=isbn).delete()
             db.session.commit()
 
             return {"message": f"Book {book.name} deleted successfully"}
-        
+
         except Exception as e:
             return {"error": f"{e}"}, 500
+
 
 class FindBook(Resource):
     @login_required
     def get(self):
         try:
-            isbn = request.args.get("isbn", default = None)
+            isbn = request.args.get("isbn", default=None)
             book_name = request.args.get("name", default=None)
             author_name = request.args.get("author_name", default=None)
             publisher = request.args.get("publisher", default=None)
-            
+
             books = None
             if isbn:
-                books = BookModel.query.filter_by(isbn = isbn).all()
+                books = BookModel.query.filter_by(isbn=isbn).all()
             elif book_name:
-                books = BookModel.query.filter_by(name = book_name).all()
+                books = BookModel.query.filter_by(name=book_name).all()
             elif publisher:
-                books = BookModel.query.filter_by(publisher = publisher).all()
+                books = BookModel.query.filter_by(publisher=publisher).all()
             elif author_name:
-                books = BookModel.query.join(BookAuthorModel, BookAuthorModel.isbn == BookModel.isbn)\
-                        .filter_by(author_name = author_name)\
-                        .with_entities(BookModel.isbn, BookModel.name, BookModel.page_count, BookModel.content, BookModel.section_id).all()
-            
+                books = (
+                    BookModel.query.join(BookAuthorModel, BookAuthorModel.isbn == BookModel.isbn)
+                    .filter_by(author_name=author_name)
+                    .with_entities(
+                        BookModel.isbn, BookModel.name, BookModel.page_count, BookModel.content, BookModel.section_id
+                    )
+                    .all()
+                )
+
             if not books:
                 return {"message": "No book found"}, 404
 
             outputList = []
             for book in books:
-                section = SectionModel.query.filter_by(id = book.section_id).first()
-                if not section: 
+                section = SectionModel.query.filter_by(id=book.section_id).first()
+                if not section:
                     return {"message": "Section does not exist"}, 404
-                outputList.append({"isbn": book.isbn, "name": book.name, "page_count": book.page_count, 
-                                   "content": book.content, "publisher": book.publisher, "section_id": book.section_id, 
-                                   "section_name": section.name})
+                outputList.append(
+                    {
+                        "isbn": book.isbn,
+                        "name": book.name,
+                        "page_count": book.page_count,
+                        "content": book.content,
+                        "publisher": book.publisher,
+                        "section_id": book.section_id,
+                        "section_name": section.name,
+                    }
+                )
             return outputList
-        
+
         except Exception as e:
             return {"error": f"{e}"}, 500
-    
+
+
 class FindSection(Resource):
     @login_required
     def get(self):
@@ -591,32 +670,36 @@ class FindSection(Resource):
 
             section = None
             if id:
-                section = SectionModel.query.filter_by(id = id).first()
-            
+                section = SectionModel.query.filter_by(id=id).first()
+
             elif name:
-                section = SectionModel.query.filter_by(name = name).first()
+                section = SectionModel.query.filter_by(name=name).first()
 
             if not section:
                 return {"message": "No section found"}, 404
 
+            return {
+                "id": section.id,
+                "name": section.name,
+                "date_created": str(section.date_created),
+                "description": section.description,
+            }
 
-            return {"id": section.id, "name": section.name, "date_created": str(section.date_created), "description": section.description}
-        
         except Exception as e:
             return {"error": f"{e}"}, 500
-        
+
 
 api.add_resource(AddUser, "/api/addUser")
 api.add_resource(Login, "/api/login")
 api.add_resource(UserInfo, "/api/userInfo")
 api.add_resource(Logout, "/api/logout")
-api.add_resource(AddSection, '/api/addSection')
-api.add_resource(AddBookAuthor, '/api/addBookAuthor')
-api.add_resource(ViewSections, '/api/viewSections')
-api.add_resource(ViewAllBooks, '/api/viewAllBooks')
-api.add_resource(RequestBook, '/api/requestBook')
+api.add_resource(AddSection, "/api/addSection")
+api.add_resource(AddBookAuthor, "/api/addBookAuthor")
+api.add_resource(ViewSections, "/api/viewSections")
+api.add_resource(ViewAllBooks, "/api/viewAllBooks")
+api.add_resource(RequestBook, "/api/requestBook")
 api.add_resource(ViewBookRequests, "/api/viewBookRequests")
-api.add_resource(IssueBook, '/api/issueBook')
+api.add_resource(IssueBook, "/api/issueBook")
 api.add_resource(ViewIssuedBooks, "/api/viewIssuedBooks")
 api.add_resource(ReturnBook, "/api/returnBook")
 api.add_resource(BookFeedback, "/api/bookFeedback")

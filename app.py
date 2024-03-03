@@ -1,7 +1,17 @@
-from flask import Flask, redirect, render_template, request,  flash
+from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from sqlalchemy import desc
-from models import db, UserLoginModel, UserInfoModel, SectionModel, BookModel, BookAuthorModel, BookRequestsModel, BookIssueModel, BookFeedbackModel
+from models import (
+    db,
+    UserLoginModel,
+    UserInfoModel,
+    SectionModel,
+    BookModel,
+    BookAuthorModel,
+    BookRequestsModel,
+    BookIssueModel,
+    BookFeedbackModel,
+)
 import os
 from blueprints.api import UserInfo, api_bp, check_role, login_manager, check_role
 from datetime import datetime, timedelta
@@ -22,30 +32,34 @@ app.register_blueprint(api_bp)
 
 login_manager = LoginManager()
 
+
 @login_manager.user_loader
 def load_user(id):
     return UserLoginModel.query.get(id)
 
-@app.route('/', methods = ['GET'])
-def home():
-    return render_template("home.html")
 
-@app.route('/librarianLogin', methods = ['GET', 'POST'])
+@app.route("/", methods=["GET"])
+def home():
+    return redirect("/librarianLogin")
+    # return render_template("home.html")
+
+
+@app.route("/librarianLogin", methods=["GET", "POST"])
 def librarianLogin():
     if request.method == "GET":
-        return render_template('login.html', role = "librarian")
-    
+        return render_template("login.html", role="librarian")
+
     username = request.form.get("username")
     password = request.form.get("password")
     role = "Librarian"
 
-    userLogin = UserLoginModel.query.filter_by(username = username).first()
+    userLogin = UserLoginModel.query.filter_by(username=username).first()
     if not userLogin:
         flash(f"User with username {username} does not exist")
         return redirect("/librarianLogin")
-    
-    userInfo = UserInfoModel.query.filter_by(username = username).first()
-    if userLogin and  not userInfo:
+
+    userInfo = UserInfoModel.query.filter_by(username=username).first()
+    if userLogin and not userInfo:
         flash(f"There is no info regarding user {username}")
         return redirect("/librarianLogin")
 
@@ -61,21 +75,22 @@ def librarianLogin():
 
     return redirect("/librarianDashboard/sections")
 
-@app.route('/generalLogin', methods = ['GET', 'POST'])
+
+@app.route("/generalLogin", methods=["GET", "POST"])
 def generalLogin():
     if request.method == "GET":
-        return render_template('login.html', role = "general")
-    
+        return render_template("login.html", role="general")
+
     username = request.form.get("username")
     password = request.form.get("password")
     role = "General"
 
-    userLogin = UserLoginModel.query.filter_by(username = username).first()
+    userLogin = UserLoginModel.query.filter_by(username=username).first()
     if not userLogin:
         flash(f"User with username {username} does not exist")
         return redirect("/generalLogin")
-    
-    userInfo = UserInfoModel.query.filter_by(username = username).first()
+
+    userInfo = UserInfoModel.query.filter_by(username=username).first()
     if userLogin and not userInfo:
         flash(f"There is no info regarding user {username}")
         return redirect("/generalLogin")
@@ -92,86 +107,89 @@ def generalLogin():
 
     return redirect("/generalDashboard")
 
-@app.route('/logout', methods = ['GET'])
+
+@app.route("/logout", methods=["GET"])
 def logout():
     logout_user()
     return redirect("/")
 
-@app.route('/addUser', methods=['GET', 'POST'])
+
+@app.route("/addUser", methods=["GET", "POST"])
 def addUser():
-    if request.method == 'GET':
-        return render_template('addUser.html')
-    
+    if request.method == "GET":
+        return render_template("addUser.html")
+
     username = request.form.get("username")
     password = request.form.get("password")
     first_name = request.form.get("first_name")
     last_name = request.form.get("last_name")
     role = "General"
 
-    userLogin = UserLoginModel(username = username, password = password)  #type: ignore
-    userInfo = UserInfoModel(username = username, first_name = first_name, last_name = last_name, role = role)  #type: ignore
+    userLogin = UserLoginModel(username=username, password=password)  # type: ignore
+    userInfo = UserInfoModel(username=username, first_name=first_name, last_name=last_name, role=role)  # type: ignore
     db.session.add(userLogin)
     db.session.add(userInfo)
     db.session.commit()
 
-    return redirect('/librarianDashboard/sections')
+    return redirect("/librarianDashboard/sections")
 
-@app.route('/librarianDashboard/sections', methods = ['GET'])
+
+@app.route("/librarianDashboard/sections", methods=["GET"])
 @login_required
 @check_role(role="Librarian")
 def sections():
     sections = SectionModel.query.all()
-    return render_template('sections.html', sections = sections)
+    return render_template("sections.html", sections=sections)
 
-@app.route('/addSection', methods = ['GET', 'POST'])
+
+@app.route("/addSection", methods=["GET", "POST"])
 @login_required
-@check_role(role = 'Librarian')
+@check_role(role="Librarian")
 def addSection():
-    if request.method == 'GET':
-        return render_template('addSection.html')
-    
-    name = request.form.get('name')
-    description = request.form.get('description')
-    section = SectionModel(name = name, description = description, date_created = datetime.now())  #type: ignore
+    if request.method == "GET":
+        return render_template("addSection.html")
+
+    name = request.form.get("name")
+    description = request.form.get("description")
+    section = SectionModel(name=name.capitalize(), description=description, date_created=datetime.now())  # type: ignore
 
     db.session.add(section)
     db.session.commit()
 
-    return redirect('/librarianDashboard/sections')
+    return redirect("/librarianDashboard/sections")
 
-@app.route('/<section_name_from_url>/addBook', methods = ['GET', 'POST'])
+
+@app.route("/<section_name_from_url>/addBook", methods=["GET", "POST"])
 @login_required
 @check_role(role="Librarian")
 def addBook(section_name_from_url: str):
-    if request.method == 'GET':
-        return render_template('addBook.html', section = section_name_from_url)
+    if request.method == "GET":
+        return render_template("addBook.html", section=section_name_from_url)
 
-    isbn = request.form.get('isbn')
-    book_name = request.form.get('book_name')
-    page_count = request.form.get('page_count')
-    content_path = request.form.get('content')
-    publisher = request.form.get('publisher')
+    isbn = request.form.get("isbn")
+    book_name = request.form.get("book_name")
+    page_count = request.form.get("page_count")
+    content_path = request.form.get("content")
+    publisher = request.form.get("publisher")
     section_name = section_name_from_url.capitalize()
-    author_names = request.form.get('author_names')
-
+    author_names = request.form.get("author_names")
 
     section = SectionModel.query.filter_by(name=section_name).first()
 
     if not section:
         return {"message": "Section does not exist"}, 404
-    
+
     if not author_names:
         return {"message": "Author names not given"}, 404
-    
+
     author_names_list: List[str] = author_names.split(",")
 
-    
     book = BookModel.query.filter_by(isbn=isbn).first()
 
     if book:
         return {"message": "Book already exists"}, 400
-    
-    book = BookModel(isbn=isbn, name=book_name, page_count = page_count, content=content_path, publisher = publisher, section_id=section.id)  # type: ignore
+
+    book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, publisher=publisher, section_id=section.id)  # type: ignore
     db.session.add(book)
 
     for author_name in author_names_list:
@@ -179,37 +197,41 @@ def addBook(section_name_from_url: str):
         db.session.add(author)
     db.session.commit()
 
-    return redirect('/librarianDashboard/sections')
+    return redirect("/librarianDashboard/sections")
 
-@app.route('/<section_name_from_url>/viewBooks', methods=['GET'])
+
+@app.route("/<section_name_from_url>/viewBooks", methods=["GET"])
 def viewBooks(section_name_from_url):
-    
+
     section_name = section_name_from_url.capitalize()
-    section = SectionModel.query.filter_by(name = section_name).first()
+    section = SectionModel.query.filter_by(name=section_name).first()
 
     if not section:
         return {"message": "Section not found"}
-    
-    books = BookModel.query.filter_by(section_id = section.id)
 
-    return render_template('viewBooks.html', books = books)
+    books = BookModel.query.filter_by(section_id=section.id)
 
-@app.route('/generalDashboard', methods = ['GET'])
+    return render_template("viewBooks.html", books=books)
+
+
+@app.route("/generalDashboard", methods=["GET"])
 def generalDashboard():
-    info = UserInfoModel.query.filter_by(username = current_user.username).first()
+    info = UserInfoModel.query.filter_by(username=current_user.username).first()
     if not info:
         return {"message": "User info does not exist"}
-    return render_template("dashboardStats.html", role = info.role)
+    return render_template("dashboardStats.html", role=info.role)
 
-@app.route('/generalDashboard/requestBooks', methods = ['GET', 'POST'])
+
+@app.route("/generalDashboard/requestBooks", methods=["GET", "POST"])
 def requestBooks():
-    if request.method == 'GET': 
-        return render_template('requestBooks.html')
-    
-    isbn = request.form.get('isbn')
-    issue_time = request.form.get('issue_time')
+    if request.method == "GET":
+        return render_template("requestBooks.html")
+
+    isbn = request.form.get("isbn")
+    issue_time = request.form.get("issue_time")
 
     return ""
+
 
 if __name__ == "__main__":
     app.run(debug=True)
