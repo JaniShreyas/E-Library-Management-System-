@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Books</title>
+</head>
+<body>
+    <div>
+        <form action="/{{section}}/addBook" method="POST">
+            <label for="isbn">ISBN</label>
+            <input id="isbn" type="text" name="isbn"></input>
+            <label for="issue_time">Issue Time</label>
+            <input id="issue_time" type="text" name="issue_time"></input>
+            <input class="submit" type="submit">
+        </form>
+    </div>
+</body>
+</html>

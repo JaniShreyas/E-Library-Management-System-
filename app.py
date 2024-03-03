@@ -3,7 +3,7 @@ from flask_login import LoginManager, login_user, logout_user, current_user, log
 from sqlalchemy import desc
 from models import db, UserLoginModel, UserInfoModel, SectionModel, BookModel, BookAuthorModel, BookRequestsModel, BookIssueModel, BookFeedbackModel
 import os
-from blueprints.api import api_bp, check_role, login_manager, check_role
+from blueprints.api import UserInfo, api_bp, check_role, login_manager, check_role
 from datetime import datetime, timedelta
 from typing import List
 
@@ -59,7 +59,7 @@ def librarianLogin():
         flash(f"Incorrect Password")
         return redirect("/librarianLogin")
 
-    return redirect("/dashboard/sections")
+    return redirect("/librarianDashboard/sections")
 
 @app.route('/generalLogin', methods = ['GET', 'POST'])
 def generalLogin():
@@ -90,7 +90,7 @@ def generalLogin():
         flash(f"Incorrect Password")
         return redirect("/generalLogin")
 
-    return redirect("/dashboard/sections")
+    return redirect("/generalDashboard")
 
 @app.route('/logout', methods = ['GET'])
 def logout():
@@ -114,10 +114,11 @@ def addUser():
     db.session.add(userInfo)
     db.session.commit()
 
-    return redirect('/dashboard/sections')
+    return redirect('/librarianDashboard/sections')
 
-@app.route('/dashboard/sections', methods = ['GET'])
+@app.route('/librarianDashboard/sections', methods = ['GET'])
 @login_required
+@check_role(role="Librarian")
 def sections():
     sections = SectionModel.query.all()
     return render_template('sections.html', sections = sections)
@@ -136,7 +137,7 @@ def addSection():
     db.session.add(section)
     db.session.commit()
 
-    return redirect('/dashboard/sections')
+    return redirect('/librarianDashboard/sections')
 
 @app.route('/<section_name_from_url>/addBook', methods = ['GET', 'POST'])
 @login_required
@@ -178,7 +179,7 @@ def addBook(section_name_from_url: str):
         db.session.add(author)
     db.session.commit()
 
-    return redirect('/dashboard/sections')
+    return redirect('/librarianDashboard/sections')
 
 @app.route('/<section_name_from_url>/viewBooks', methods=['GET'])
 def viewBooks(section_name_from_url):
@@ -192,6 +193,23 @@ def viewBooks(section_name_from_url):
     books = BookModel.query.filter_by(section_id = section.id)
 
     return render_template('viewBooks.html', books = books)
+
+@app.route('/generalDashboard', methods = ['GET'])
+def generalDashboard():
+    info = UserInfoModel.query.filter_by(username = current_user.username).first()
+    if not info:
+        return {"message": "User info does not exist"}
+    return render_template("dashboardStats.html", role = info.role)
+
+@app.route('/generalDashboard/requestBooks', methods = ['GET', 'POST'])
+def requestBooks():
+    if request.method == 'GET': 
+        return render_template('requestBooks.html')
+    
+    isbn = request.form.get('isbn')
+    issue_time = request.form.get('issue_time')
+
+    return ""
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -44,6 +44,7 @@ class BookRequestsModel(db.Model):
     isbn = Column(String(13), ForeignKey("book.isbn"), primary_key=True)
     username = Column(String(40), ForeignKey('user_login.username'), primary_key=True)
     date_of_request = Column(DateTime, nullable=False)
+    issue_time = Column(Integer, nullable=False)
 
 class BookIssueModel(db.Model):
     __tablename__ = "book_issue"

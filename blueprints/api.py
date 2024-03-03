@@ -2,7 +2,7 @@ from flask import Blueprint, request
 from flask_restful import Resource, reqparse, Api
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from models import db, UserLoginModel, UserInfoModel, SectionModel, BookModel, BookAuthorModel, BookRequestsModel, BookIssueModel, BookFeedbackModel
-from typing import List
+from typing import List, Callable
 from datetime import datetime, timedelta
 
 api_bp = Blueprint("api", __name__)
@@ -26,6 +26,7 @@ reqParser.add_argument("description", type=str)
 reqParser.add_argument("content", type=str)
 reqParser.add_argument("publisher", type = str)
 reqParser.add_argument("author_names", type=str)
+reqParser.add_argument("issue_time", type=int)
 
 reqParser.add_argument("feedback", type = str)
 reqParser.add_argument("old_to_new_author", type = str)
@@ -33,7 +34,7 @@ reqParser.add_argument("old_to_new_isbn", type = str)
 
 # Decorator function to verify role
 def check_role(role: str):
-    def decorator(function):
+    def decorator(function: Callable):
         def wrapper(*args, **kwargs):
             info = UserInfoModel.query.filter_by(username=current_user.username).first()
 
@@ -44,6 +45,7 @@ def check_role(role: str):
                 return {"message": f"Only {role} user has access here"}, 400
             else:
                 return function(*args, **kwargs)
+        wrapper.__name__ = function.__name__
         return wrapper
     return decorator
 
@@ -249,7 +251,14 @@ class RequestBook(Resource):
         args = reqParser.parse_args()
         try:
             isbn = args["isbn"]
+            issue_time = args["issue_time"]
             book = BookModel.query.filter_by(isbn=isbn).first()
+
+            if issue_time > 7:
+                return {"message": "Issue time cannot be greater than 7"}
+            
+            if issue_time < 1:
+                return {"message": "Issue time must be greater than 0"}
 
             book_request = BookRequestsModel.query.filter_by(isbn = isbn, username = current_user.username).first()
             if book_request:
@@ -262,7 +271,7 @@ class RequestBook(Resource):
             if not book:
                 return {"message": "Book does not exist"}, 404
             
-            book_request = BookRequestsModel(isbn=isbn, username=current_user.username, date_of_request=datetime.now())  # type: ignore
+            book_request = BookRequestsModel(isbn=isbn, username=current_user.username, date_of_request=datetime.now(), issue_time = issue_time)  # type: ignore
             db.session.add(book_request)
             db.session.commit()
 
@@ -277,7 +286,7 @@ class ViewBookRequests(Resource):
     def get(self):
         try:
             book_requests = BookRequestsModel.query.all()
-            return [{"isbn": book_request.isbn, "username": book_request.username} for book_request in book_requests]
+            return [{"isbn": book_request.isbn, "username": book_request.username, "issue_time": book_request.issue_time} for book_request in book_requests]
         
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -296,7 +305,7 @@ class IssueBook(Resource):
             if not book_request:
                 return {"message": "Book request does not exist"}, 404
             
-            book_issue = BookIssueModel(isbn=isbn, username=username, date_of_issue=datetime.now(), date_of_return=datetime.now() + timedelta(days=7))  # type: ignore
+            book_issue = BookIssueModel(isbn=isbn, username=username, date_of_issue=datetime.now(), date_of_return=datetime.now() + timedelta(days=book_request.issue_time))  # type: ignore
             db.session.add(book_issue)
 
             BookRequestsModel.query.filter_by(isbn=isbn, username=username).delete()
