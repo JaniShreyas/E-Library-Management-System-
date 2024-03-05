@@ -35,8 +35,8 @@ class BookModel(db.Model):
     name = Column(String(100), nullable=False)
     page_count = Column(Integer, nullable=False)
     content = Column(String, nullable=False)
-    section_id = Column(Integer, ForeignKey("section.id"), nullable=False)
     publisher = Column(String(100), nullable=False)
+    section_id = Column(Integer, ForeignKey("section.id"), nullable=False)
 
 
 class BookAuthorModel(db.Model):

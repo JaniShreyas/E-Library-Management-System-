@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Books</title>
+</head>
+<body>
+    <div>
+        {% for book, section in books: %}
+        ISBN: {{book.isbn}} <br>
+        Name: {{book.name}} <br>
+        Section: {{section.name}} <br>
+        <button onclick="window.location.href='/requestBook/{{book.isbn}}'">Request Book</button>
+        {% endfor %}
+    </div>
+</body>
+</html>

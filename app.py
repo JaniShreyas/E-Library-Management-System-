@@ -1,6 +1,6 @@
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from sqlalchemy import desc
+from sqlalchemy.orm import aliased
 from models import (
     db,
     UserLoginModel,
@@ -201,6 +201,7 @@ def addBook(section_name_from_url: str):
 
 
 @app.route("/<section_name_from_url>/viewBooks", methods=["GET"])
+@login_required
 def viewBooks(section_name_from_url):
 
     section_name = section_name_from_url.capitalize()
@@ -215,6 +216,7 @@ def viewBooks(section_name_from_url):
 
 
 @app.route("/generalDashboard", methods=["GET"])
+@login_required
 def generalDashboard():
     info = UserInfoModel.query.filter_by(username=current_user.username).first()
     if not info:
@@ -222,14 +224,46 @@ def generalDashboard():
     return render_template("dashboardStats.html", role=info.role)
 
 
-@app.route("/generalDashboard/requestBooks", methods=["GET", "POST"])
+@app.route("/generalDashboard/requestBooks", methods=["GET"])
+@login_required
 def requestBooks():
-    if request.method == "GET":
-        return render_template("requestBooks.html")
+    
+    query = db.session.query(BookModel, SectionModel).join(SectionModel, onclause=SectionModel.id == BookModel.section_id).all()
 
-    isbn = request.form.get("isbn")
+    return render_template("allBooks.html", books = query)
+
+@app.route("/requestBook/<isbn>", methods = ["GET", "POST"])
+@login_required
+def requestBook(isbn: str):
+    if request.method == "GET": 
+        return render_template("requestForm.html", isbn = isbn)
+    
     issue_time = request.form.get("issue_time")
+    
+    book_request = BookRequestsModel.query.filter_by(isbn = isbn, username = current_user.username).first()
+    if book_request:
+        return {"message": "Book request already exists"}
 
+    book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = current_user.username).first()
+    if book_issue:
+        return {"message": "Book has already been issued"}
+
+    book_request = BookRequestsModel(isbn = isbn, username = current_user.username, date_of_request=datetime.now(), issue_time=issue_time)  # type: ignore
+    db.session.add(book_request)
+    db.session.commit()
+
+    return redirect("/generalDashboard/requestBooks")
+
+@app.route("/generalDashboard/books", methods = ["GET", "POST"])
+@login_required
+def generalBooks():
+    if request.method == "GET":
+
+        requested = db.session.query(BookRequestsModel, BookModel).join(BookRequestsModel, onclause=BookRequestsModel.isbn == BookModel.isbn).filter_by(username = current_user.username).all()
+        issued = db.session.query(BookIssueModel, BookModel).join(BookIssueModel, onclause=BookIssueModel.isbn == BookModel.isbn).filter_by(username = current_user.username).all()
+
+        return render_template("generalBooks.html", issued = issued, requested = requested)
+    
     return ""
 
 
