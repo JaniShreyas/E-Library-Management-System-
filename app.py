@@ -1,3 +1,4 @@
+from tabnanny import check
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from sqlalchemy.orm import aliased
@@ -238,7 +239,10 @@ def requestBook(isbn: str):
     if request.method == "GET": 
         return render_template("requestForm.html", isbn = isbn)
     
-    issue_time = request.form.get("issue_time")
+    issue_time = int(request.form.get("issue_time", 8))
+
+    if not (1 < issue_time < 8):
+        return {"message": "Issue time should be in range (1,7)"}
     
     book_request = BookRequestsModel.query.filter_by(isbn = isbn, username = current_user.username).first()
     if book_request:
@@ -265,6 +269,49 @@ def generalBooks():
         return render_template("generalBooks.html", issued = issued, requested = requested)
     
     return ""
+
+@app.route("/viewRequests", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
+def viewRequests():
+    book_requests = BookRequestsModel.query.all()
+    return render_template("viewRequests.html", requests = book_requests)
+
+@app.route("/viewRequests/dealWithRequest", methods = ["GET"])
+def dealWithRequest():
+    isbn = request.args.get("isbn")
+    username = request.args.get("username")
+    issue_time = request.args.get("issue_time")
+    accept = request.args.get("accept")
+
+    if accept not in ('0','1'):
+        return {"message": "accept should be in (0,1)"}, 400
+    
+    if accept == '1':
+        # Accept book
+
+        book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = username).first()
+        if book_issue:
+            return {"message": "Book Issue already exists"}, 400
+
+        book = BookModel.query.filter_by(isbn = isbn).first()
+        if not book: 
+            return {"message": "Book does not exist"}, 400
+
+        book_issue = BookIssueModel(isbn = isbn, username = username, date_of_issue = datetime.now(), date_of_return = datetime.now() + timedelta(int(issue_time)))  # type: ignore
+
+        BookRequestsModel.query.filter_by(isbn = isbn, username = username).delete()
+
+        db.session.add(book_issue)
+        db.session.commit()
+
+        return redirect("/viewRequests")
+
+    else:
+        # Reject book
+        BookRequestsModel.query.filter_by(isbn = isbn, username = username).delete()
+        db.session.commit()
+        return redirect("/viewRequests")
 
 
 if __name__ == "__main__":

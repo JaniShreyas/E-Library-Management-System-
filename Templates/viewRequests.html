@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Requests</title>
+</head>
+<body>
+    <div>
+        <h1>Book Requests</h1>
+        {% for request in requests: %}
+        ISBN: {{request.isbn}} <br>
+        Username: {{request.username}} <br>
+        Issue Time: {{request.issue_time}} <br>
+        <button onclick="window.location.href='/viewRequests/dealWithRequest?isbn={{request.isbn}}&username={{request.username}}&issue_time={{request.issue_time}}&accept=1'">Accept</button> <br>
+        <button onclick="window.location.href='/viewRequests/dealWithRequest?isbn={{request.isbn}}&username={{request.username}}&accept=0'">Reject</button> <br>
+        {% endfor %}
+    </div>
+</body>
+</html>
