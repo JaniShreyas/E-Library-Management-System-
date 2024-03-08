@@ -7,21 +7,21 @@
 </head>
 <body>
     <div>
-        Issued Books:
+        <h2>Issued Books: </h2>
         {% for bookRequest, book in issued %}
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
         
-        [Baaki saman yahan pe]
+        [Baaki saman yahan pe] <br><br>
 
         {% endfor %}
 
-        Requested Books:
+        <h2>Requested Books: </h2>
         {% for bookIssue, book in requested %}
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
 
-        [Baaki saman yahan pe bhi]
+        [Baaki saman yahan pe bhi] <br><br>
 
         {% endfor %}
     </div>

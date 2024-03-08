@@ -237,6 +237,12 @@ def requestBooks():
 @login_required
 def requestBook(isbn: str):
     if request.method == "GET": 
+
+        book_request = BookRequestsModel.query.filter_by(username = current_user.username).all()
+        book_issue = BookIssueModel.query.filter_by(username = current_user.username).all()
+        if (len(book_request) + len(book_issue)) >= 5:
+            return {"message": "You can only request/issue 5 books at once"}
+
         return render_template("requestForm.html", isbn = isbn)
     
     issue_time = int(request.form.get("issue_time", 8))
