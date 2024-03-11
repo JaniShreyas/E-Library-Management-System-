@@ -140,7 +140,11 @@ def addUser():
 @check_role(role="Librarian")
 def sections():
     sections = SectionModel.query.all()
-    return render_template("sections.html", sections=sections)
+    user_info = UserInfoModel.query.filter_by(username = current_user.username).first()
+    if not user_info:
+        return {"message": "User info does not exist"}
+    role = user_info.role
+    return render_template("sections.html", sections=sections, role=role)
 
 
 @app.route("/addSection", methods=["GET", "POST"])
@@ -201,6 +205,7 @@ def addBook(section_name_from_url: str):
     return redirect("/librarianDashboard/sections")
 
 
+# Don't restrict by role since used by both users
 @app.route("/<section_name_from_url>/viewBooks", methods=["GET"])
 @login_required
 def viewBooks(section_name_from_url):
@@ -284,6 +289,8 @@ def viewRequests():
     return render_template("viewRequests.html", requests = book_requests)
 
 @app.route("/viewRequests/dealWithRequest", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
 def dealWithRequest():
     isbn = request.args.get("isbn")
     username = request.args.get("username")
@@ -319,6 +326,44 @@ def dealWithRequest():
         db.session.commit()
         return redirect("/viewRequests")
 
+@app.route("/returnBook", methods=["GET"])
+@login_required
+def returnBook():
+    isbn = request.args.get("isbn")
+    book_issue = BookIssueModel.query.filter_by(username = current_user.username, isbn = isbn)
+    if not book_issue:
+        return {"message": "Book issue does not exist"}
+    
+    BookIssueModel.query.filter_by(username = current_user.username, isbn = isbn).delete()
+    db.session.commit()
+
+    return redirect(f"/feedback?isbn={isbn}")
+
+@app.route("/feedback", methods = ["GET", "POST"])
+@login_required
+def feedback():
+    if request.method == "GET":
+        isbn = request.args.get("isbn")
+        return render_template("feedback.html", isbn = isbn)        
+
+    isbn = request.form.get("isbn")
+    feedback = request.form.get("feedback")
+
+    book_feedback = BookFeedbackModel(username = current_user.username, isbn = isbn, feedback = feedback)  # type: ignore
+    db.session.add(book_feedback)
+    db.session.commit()
+
+    return redirect("/generalDashboard/books")
+
+@app.route("/generalDashboard/sections", methods = ["GET"])
+@login_required
+def generalViewSections():
+    sections = SectionModel.query.all()
+    user_info = UserInfoModel.query.filter_by(username = current_user.username).first()
+    if not user_info:
+        return {"message": "User info does not exist"}
+    role = user_info.role
+    return render_template("sections.html", sections=sections, role = role)
 
 if __name__ == "__main__":
     app.run(debug=True)

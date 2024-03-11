@@ -11,8 +11,8 @@
         {% for bookRequest, book in issued %}
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
-        
-        [Baaki saman yahan pe] <br><br>
+        [Baaki saman yahan pe] <br>
+        <button onclick="window.location.href='/returnBook?isbn={{book.isbn}}'">Return Book</button> <br> <br>
 
         {% endfor %}
 
