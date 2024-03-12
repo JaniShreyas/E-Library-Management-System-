@@ -1,6 +1,7 @@
 from tabnanny import check
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from numpy import delete
 from sqlalchemy.orm import aliased
 from models import (
     db,
@@ -281,7 +282,7 @@ def generalBooks():
     
     return ""
 
-@app.route("/viewRequests", methods = ["GET"])
+@app.route("/librarianDashboard/viewRequests", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def viewRequests():
@@ -318,13 +319,13 @@ def dealWithRequest():
         db.session.add(book_issue)
         db.session.commit()
 
-        return redirect("/viewRequests")
+        return redirect("/librarianDashboard/viewRequests")
 
     else:
         # Reject book
         BookRequestsModel.query.filter_by(isbn = isbn, username = username).delete()
         db.session.commit()
-        return redirect("/viewRequests")
+        return redirect("/librarianDashboard/viewRequests")
 
 @app.route("/returnBook", methods=["GET"])
 @login_required
@@ -364,6 +365,30 @@ def generalViewSections():
         return {"message": "User info does not exist"}
     role = user_info.role
     return render_template("sections.html", sections=sections, role = role)
+
+@app.route("/librarianDashboard/revokeAccess", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
+def librarianDashboarRevokeAccess():
+    
+    book_issues = BookIssueModel.query.all()
+    return render_template("revokeAccess.html", book_issues = book_issues)
+
+@app.route("/revokeAccess", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
+def revokeAccess():
+    isbn = request.args.get("isbn")
+    username = request.args.get("username")
+
+    book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = username).first()
+    if not book_issue:
+        return {"message": "Book issue does not exist"}
+    
+    BookIssueModel.query.filter_by(isbn = isbn, username = username).delete()
+    db.session.commit()
+
+    return redirect("/librarianDashboard/revokeAccess")
 
 if __name__ == "__main__":
     app.run(debug=True)

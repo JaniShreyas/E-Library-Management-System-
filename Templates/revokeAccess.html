@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revoke Access</title>
+</head>
+<body>
+    <div>
+        {% for book_issue in book_issues %}
+        ISBN: book_issue.isbn <br>
+        username: book_issue.username <br>
+        <button onclick="window.location.href='/revokeAccess?isbn={{book_issue.isbn}}&username={{book_issue.username}}'">Revoke Access</button> <br> <br>
+        {% endfor %}
+    </div>
+</body>
+</html>
