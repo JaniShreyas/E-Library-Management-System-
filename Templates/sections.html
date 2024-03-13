@@ -11,6 +11,7 @@
         <div>{{("section_id", section.id), ("name", section.name), 
             ("date_created", section.date_created), ("description", section.description)}}</div>
         {% if role == "Librarian": %}
+        <button onclick="window.location.href='/editSection?id={{section.id}}'">Edit Section</button>
         <button onclick = "window.location.href='/{{section.name}}/addBook'">Add Book</button>
         {% endif %}
         <button onclick = "window.location.href='/{{section.name}}/viewBooks'">View Books</button>

@@ -2,6 +2,7 @@ from tabnanny import check
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from numpy import delete
+from sqlalchemy import desc
 from sqlalchemy.orm import aliased
 from models import (
     db,
@@ -389,6 +390,32 @@ def revokeAccess():
     db.session.commit()
 
     return redirect("/librarianDashboard/revokeAccess")
+
+@app.route("/editSection", methods = ["GET", "POST"])
+@login_required
+@check_role(role = "Librarian")
+def editSection():
+    id = request.args.get("id")
+    if request.method == "GET":
+        return render_template("editSection.html", id = id)
+    
+    id = request.form.get("id")
+    name = request.form.get("name")
+    description = request.form.get("description")
+
+    section = SectionModel.query.filter_by(id = id).first()
+    
+    if not section:
+        return {"message": "Section not found"}
+
+    if name:
+        section.name = name
+    
+    if description:
+        section.description = description
+
+    db.session.commit()
+    return redirect("/librarianDashboard/sections")
 
 if __name__ == "__main__":
     app.run(debug=True)
