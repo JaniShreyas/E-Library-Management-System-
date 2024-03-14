@@ -1,3 +1,4 @@
+from hmac import new
 from tabnanny import check
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
@@ -198,9 +199,10 @@ def addBook(section_name_from_url: str):
 
     book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, publisher=publisher, section_id=section.id)  # type: ignore
     db.session.add(book)
+    db.session.commit()
 
     for author_name in author_names_list:
-        author = BookAuthorModel(isbn=isbn, author_name=author_name)  # type: ignore
+        author = BookAuthorModel(book_id=book.id, author_name=author_name)  # type: ignore
         db.session.add(author)
     db.session.commit()
 
@@ -257,15 +259,19 @@ def requestBook(isbn: str):
     if not (1 < issue_time < 8):
         return {"message": "Issue time should be in range (1,7)"}
     
-    book_request = BookRequestsModel.query.filter_by(isbn = isbn, username = current_user.username).first()
+    book = BookModel.query.filter_by(isbn = isbn).first()
+    if not book:
+        return {"message": "Book does not exist"}, 404
+    
+    book_request = BookRequestsModel.query.filter_by(book_id = book.id, username = current_user.username).first()
     if book_request:
         return {"message": "Book request already exists"}
 
-    book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = current_user.username).first()
+    book_issue = BookIssueModel.query.filter_by(book_id = book.id, username = current_user.username).first()
     if book_issue:
         return {"message": "Book has already been issued"}
 
-    book_request = BookRequestsModel(isbn = isbn, username = current_user.username, date_of_request=datetime.now(), issue_time=issue_time)  # type: ignore
+    book_request = BookRequestsModel(book_id = book.id, username = current_user.username, date_of_request=datetime.now(), issue_time=issue_time)  # type: ignore
     db.session.add(book_request)
     db.session.commit()
 
@@ -276,8 +282,8 @@ def requestBook(isbn: str):
 def generalBooks():
     if request.method == "GET":
 
-        requested = db.session.query(BookRequestsModel, BookModel).join(BookRequestsModel, onclause=BookRequestsModel.isbn == BookModel.isbn).filter_by(username = current_user.username).all()
-        issued = db.session.query(BookIssueModel, BookModel).join(BookIssueModel, onclause=BookIssueModel.isbn == BookModel.isbn).filter_by(username = current_user.username).all()
+        requested = db.session.query(BookRequestsModel, BookModel).join(BookRequestsModel, onclause=BookRequestsModel.book_id == BookModel.id).filter_by(username = current_user.username).all()
+        issued = db.session.query(BookIssueModel, BookModel).join(BookIssueModel, onclause=BookIssueModel.book_id == BookModel.id).filter_by(username = current_user.username).all()
 
         return render_template("generalBooks.html", issued = issued, requested = requested)
     
@@ -302,20 +308,20 @@ def dealWithRequest():
     if accept not in ('0','1'):
         return {"message": "accept should be in (0,1)"}, 400
     
+    book = BookModel.query.filter_by(isbn = isbn).first()
+    if not book:
+        return {"message": "Book does not exist"}, 404
+    
     if accept == '1':
         # Accept book
 
-        book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = username).first()
+        book_issue = BookIssueModel.query.filter_by(book_id=book.id, username = username).first()
         if book_issue:
             return {"message": "Book Issue already exists"}, 400
 
-        book = BookModel.query.filter_by(isbn = isbn).first()
-        if not book: 
-            return {"message": "Book does not exist"}, 400
+        book_issue = BookIssueModel(book_id=book.id, username = username, date_of_issue = datetime.now(), date_of_return = datetime.now() + timedelta(int(issue_time)))  # type: ignore
 
-        book_issue = BookIssueModel(isbn = isbn, username = username, date_of_issue = datetime.now(), date_of_return = datetime.now() + timedelta(int(issue_time)))  # type: ignore
-
-        BookRequestsModel.query.filter_by(isbn = isbn, username = username).delete()
+        BookRequestsModel.query.filter_by(book_id=book.id, username = username).delete()
 
         db.session.add(book_issue)
         db.session.commit()
@@ -324,7 +330,7 @@ def dealWithRequest():
 
     else:
         # Reject book
-        BookRequestsModel.query.filter_by(isbn = isbn, username = username).delete()
+        BookRequestsModel.query.filter_by(book_id=book.id, username = username).delete()
         db.session.commit()
         return redirect("/librarianDashboard/viewRequests")
 
@@ -332,11 +338,16 @@ def dealWithRequest():
 @login_required
 def returnBook():
     isbn = request.args.get("isbn")
-    book_issue = BookIssueModel.query.filter_by(username = current_user.username, isbn = isbn)
+
+    book = BookModel.query.filter_by(isbn = isbn).first()
+    if not book:
+        return {"message": "Book does not exist"}, 404
+
+    book_issue = BookIssueModel.query.filter_by(username = current_user.username, book_id=book.id)
     if not book_issue:
         return {"message": "Book issue does not exist"}
     
-    BookIssueModel.query.filter_by(username = current_user.username, isbn = isbn).delete()
+    BookIssueModel.query.filter_by(username = current_user.username, book_id=book.id).delete()
     db.session.commit()
 
     return redirect(f"/feedback?isbn={isbn}")
@@ -351,7 +362,11 @@ def feedback():
     isbn = request.form.get("isbn")
     feedback = request.form.get("feedback")
 
-    book_feedback = BookFeedbackModel(username = current_user.username, isbn = isbn, feedback = feedback)  # type: ignore
+    book = BookModel.query.filter_by(isbn = isbn).first()
+    if not book:
+        return {"message": "Book does not exist"}, 404
+
+    book_feedback = BookFeedbackModel(username = current_user.username, book_id=book.id, feedback = feedback)  # type: ignore
     db.session.add(book_feedback)
     db.session.commit()
 
@@ -382,11 +397,15 @@ def revokeAccess():
     isbn = request.args.get("isbn")
     username = request.args.get("username")
 
-    book_issue = BookIssueModel.query.filter_by(isbn = isbn, username = username).first()
+    book = BookModel.query.filter_by(isbn = isbn).first()
+    if not book:
+        return {"message": "Book does not exist"}, 404
+
+    book_issue = BookIssueModel.query.filter_by(book_id=book.id, username = username).first()
     if not book_issue:
         return {"message": "Book issue does not exist"}
     
-    BookIssueModel.query.filter_by(isbn = isbn, username = username).delete()
+    BookIssueModel.query.filter_by(book_id=book.id, username = username).delete()
     db.session.commit()
 
     return redirect("/librarianDashboard/revokeAccess")
@@ -416,6 +435,64 @@ def editSection():
 
     db.session.commit()
     return redirect("/librarianDashboard/sections")
+
+@app.route("/editBook", methods = ["GET", "POST"])
+@login_required
+@check_role(role = "Librarian")
+def editBook():
+    if request.method == "GET":
+        id = request.args.get("id")
+        return render_template("editBook.html", id = id)
+    
+    book_id = request.form.get("book_id")
+    new_isbn = request.form.get("new_isbn")
+    name = request.form.get("name")
+    old_author = request.form.get("old_author")
+    new_author = request.form.get("new_author")
+    page_count = request.form.get("page_count")
+    content_path = request.form.get("content_path")
+    publisher = request.form.get("publisher")
+    section_name = request.form.get("section_name")
+    
+    book = BookModel.query.filter_by(id = book_id).first()
+    if not book:
+        return {"message": "Book does not exist"}
+
+    if new_isbn:
+        book.isbn = new_isbn
+
+    if section_name:
+        section = SectionModel.query.filter_by(name = section_name).first()
+        if not section:
+            return {"message": "Section does not exist"}
+        book.section_id = section.id
+
+    if name:
+        book.name = name
+
+    if old_author:
+        if not new_author:
+            return {"message": "New Author name not given"}
+
+        book_author = BookAuthorModel.query.filter_by(book_id = book_id, author_name = old_author).first()
+        if not book_author:
+            return {"message": "Author does not exist"}
+        book_author.author_name = new_author
+
+    if page_count:
+        book.page_count = page_count
+
+    if content_path:
+        book.content = content_path
+
+    if publisher:
+        book.publisher = publisher
+
+    db.session.commit()
+
+    return redirect("librarianDashboard/sections")
+
+        
 
 if __name__ == "__main__":
     app.run(debug=True)

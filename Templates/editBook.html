@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Book</title>
+</head>
+<body>
+    <div>
+        <form class="editBookForm" action="/editBook" method="post">
+            <label for="book_id">Book ID</label>
+            <input id="book_id" type="text" name="book_id" value = {{id}}></input>
+            <label for="new_isbn">New ISBN</label>
+            <input id="new_isbn" type="text" name="new_isbn"></input>
+            <label for="name">Name</label>
+            <input id="name" type="text" name="name"></input>
+            <label for="old_author">Old Author</label>
+            <input id="old_author" type="text" name="old_author"></input>
+            <label for="new_author">New Author</label>
+            <input id="new_author" type="text" name="new_author"></input>
+            <label for="page_count">Page Count</label>
+            <input id="page_count" type="text" name="page_count"></input>
+            <label for="content_path">Content Path</label>
+            <input id="content_path" type="text" name="content_path"></input>
+            <label for="publisher">Publisher</label>
+            <input id="publisher" type="text" name="publisher"></input>
+            <label for="section_name">Section Name</label>
+            <input id="section_name" type="text" name="section_name"></input>
+            <input class="submit" type="submit">
+        </form>
+    </div>
+</body>
+</html>

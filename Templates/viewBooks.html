@@ -9,12 +9,14 @@
     <div>
         {% for book in books: %}
         <div>
+            "id": {{book.id}} <br>
             "isbn": {{book.isbn}} <br>
             "name": {{book.name}} <br>
             "page_count": {{book.page_count}} <br>
             "content": {{book.content}} <br>
             "section_id": {{book.section_id}} <br>
-            "publisher": {{book.publisher}} <br> <br>
+            "publisher": {{book.publisher}} <br>
+            <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> <br> <br>
         </div>
         {% endfor %}
     </div>

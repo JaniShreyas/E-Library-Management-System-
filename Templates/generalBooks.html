@@ -9,6 +9,7 @@
     <div>
         <h2>Issued Books: </h2>
         {% for bookRequest, book in issued %}
+        ID: {{book.id}} <br>
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
         [Baaki saman yahan pe] <br>
@@ -18,6 +19,7 @@
 
         <h2>Requested Books: </h2>
         {% for bookIssue, book in requested %}
+        ID: {{book.id}} <br>
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
 

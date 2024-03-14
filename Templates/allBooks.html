@@ -8,6 +8,7 @@
 <body>
     <div>
         {% for book, section in books: %}
+        ID: {{book.id}} <br>
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
         Section: {{section.name}} <br>
