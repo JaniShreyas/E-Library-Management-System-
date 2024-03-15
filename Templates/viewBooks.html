@@ -16,7 +16,9 @@
             "content": {{book.content}} <br>
             "section_id": {{book.section_id}} <br>
             "publisher": {{book.publisher}} <br>
-            <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> <br> <br>
+            <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> <br>
+            <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> <br> <br>
+            
         </div>
         {% endfor %}
     </div>

@@ -492,7 +492,38 @@ def editBook():
 
     return redirect("librarianDashboard/sections")
 
-        
+@app.route("/removeSection", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
+def removeSection():
+    id = request.args.get("id")
+    if not id:
+        return {"message": "ID not provided"}
+    
+    section = SectionModel.query.filter_by(id = id).first()
+    if not section:
+        return {"message": "Section not found"}
+
+    books = BookModel.query.filter_by(section_id = id).update({"section_id": -1})
+    SectionModel.query.filter_by(id = id).delete()
+    
+    db.session.commit()
+
+    return redirect("/librarianDashboard/sections")
+
+@app.route("/removeBook", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
+def removeBook():
+    id = request.args.get("id")
+    book = BookModel.query.filter_by(id = id).first()
+    if not book:
+        return {"message": "Book does not exist"}
+    
+    BookModel.query.filter_by(id = id).delete()
+    db.session.commit()
+
+    return redirect("librarianDashboard/sections")
 
 if __name__ == "__main__":
     app.run(debug=True)
