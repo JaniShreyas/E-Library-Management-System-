@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Book Status</title>
+</head>
+<body>
+    <div>
+        <h3>Book ID: {{id}}</h3>
+        <br>
+
+        {% for username in usernames: %}
+        Username: {{username}} <br>
+        {% endfor %}
+        
+        {% for name in names: %}
+        Name: {{name}} <br>
+        {% endfor %}
+
+        {% for book_issue in book_issues: %}
+        Date of Issue: {{book_issue.date_of_issue}} <br>
+        Date of Return: {{book_issue.date_of_return}} <br> <br>
+        {% endfor %}
+    </div>
+</body>
+</html>

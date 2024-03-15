@@ -135,7 +135,7 @@ def addUser():
     db.session.add(userInfo)
     db.session.commit()
 
-    return redirect("/librarianDashboard/sections")
+    return redirect("/generalDashboard")
 
 
 @app.route("/librarianDashboard/sections", methods=["GET"])
@@ -300,7 +300,7 @@ def viewRequests():
 @login_required
 @check_role(role = "Librarian")
 def dealWithRequest():
-    isbn = request.args.get("isbn")
+    id = request.args.get("id")
     username = request.args.get("username")
     issue_time = request.args.get("issue_time")
     accept = request.args.get("accept")
@@ -308,7 +308,7 @@ def dealWithRequest():
     if accept not in ('0','1'):
         return {"message": "accept should be in (0,1)"}, 400
     
-    book = BookModel.query.filter_by(isbn = isbn).first()
+    book = BookModel.query.filter_by(id = id).first()
     if not book:
         return {"message": "Book does not exist"}, 404
     
@@ -524,6 +524,31 @@ def removeBook():
     db.session.commit()
 
     return redirect("librarianDashboard/sections")
+
+@app.route("/librarianDashboard/viewBookStatus", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
+def viewBookStatus():
+    id = request.args.get("id")
+    book_issues = BookIssueModel.query.filter_by(book_id = id).all()
+    if not book_issues:
+        return {"message": "No book issues exist"}
+    
+    usernames = [book_issue.username for book_issue in book_issues]
+
+    names = []
+    for username in usernames:
+        user_info = UserInfoModel.query.filter_by(username = username).first()
+        if not user_info:
+            return {"message": "User info does not exist"}
+        name = user_info.first_name
+        if user_info.last_name:
+            name += f" {user_info.last_name}"
+
+        names.append(name)
+
+    return render_template("viewBookStatus.html",id = id, book_issues = book_issues, usernames = usernames, names = names)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

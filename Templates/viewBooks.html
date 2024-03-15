@@ -17,7 +17,8 @@
             "section_id": {{book.section_id}} <br>
             "publisher": {{book.publisher}} <br>
             <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> <br>
-            <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> <br> <br>
+            <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> <br>
+            <button onclick="window.location.href='/librarianDashboard/viewBookStatus?id={{book.id}}'">View Status</button> <br> <br>
             
         </div>
         {% endfor %}
