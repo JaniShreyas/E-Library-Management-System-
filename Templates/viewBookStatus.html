@@ -10,17 +10,12 @@
         <h3>Book ID: {{id}}</h3>
         <br>
 
-        {% for username in usernames: %}
-        Username: {{username}} <br>
-        {% endfor %}
-        
-        {% for name in names: %}
-        Name: {{name}} <br>
-        {% endfor %}
-
-        {% for book_issue in book_issues: %}
-        Date of Issue: {{book_issue.date_of_issue}} <br>
-        Date of Return: {{book_issue.date_of_return}} <br> <br>
+        {% for book_user in book_and_users: %}
+        Username: {{book_user.username}} <br>
+        Name: {{book_user.first_name + " " + book_user.last_name}} <br>
+        Role: {{book_user.role}} <br>
+        Date Of Issue: {{book_user.date_of_issue}} <br>
+        Date of Return: {{book_user.date_of_return}} <br> <br>
         {% endfor %}
     </div>
 </body>

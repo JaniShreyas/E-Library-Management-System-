@@ -137,6 +137,10 @@ def addUser():
 
     return redirect("/generalDashboard")
 
+@app.route("/librarianDashboard", methods = ["GET"])
+def librarianDashboard():
+    return ""
+
 
 @app.route("/librarianDashboard/sections", methods=["GET"])
 @login_required
@@ -222,7 +226,11 @@ def viewBooks(section_name_from_url):
 
     books = BookModel.query.filter_by(section_id=section.id)
 
-    return render_template("viewBooks.html", books=books)
+    user_info = UserInfoModel.query.filter_by(username = current_user.username).first()
+    if not user_info:
+        return {"message": "User info does not exist"}
+
+    return render_template("viewBooks.html", books=books, role = user_info.role)
 
 
 @app.route("/generalDashboard", methods=["GET"])
@@ -237,9 +245,7 @@ def generalDashboard():
 @app.route("/generalDashboard/requestBooks", methods=["GET"])
 @login_required
 def requestBooks():
-    
     query = db.session.query(BookModel, SectionModel).join(SectionModel, onclause=SectionModel.id == BookModel.section_id).all()
-
     return render_template("allBooks.html", books = query)
 
 @app.route("/requestBook/<isbn>", methods = ["GET", "POST"])
@@ -337,9 +343,9 @@ def dealWithRequest():
 @app.route("/returnBook", methods=["GET"])
 @login_required
 def returnBook():
-    isbn = request.args.get("isbn")
+    id = request.args.get("id")
 
-    book = BookModel.query.filter_by(isbn = isbn).first()
+    book = BookModel.query.filter_by(id = id).first()
     if not book:
         return {"message": "Book does not exist"}, 404
 
@@ -350,14 +356,17 @@ def returnBook():
     BookIssueModel.query.filter_by(username = current_user.username, book_id=book.id).delete()
     db.session.commit()
 
-    return redirect(f"/feedback?isbn={isbn}")
+    return redirect(f"/feedback?id={id}")
 
 @app.route("/feedback", methods = ["GET", "POST"])
 @login_required
 def feedback():
     if request.method == "GET":
-        isbn = request.args.get("isbn")
-        return render_template("feedback.html", isbn = isbn)        
+        id = request.args.get("id")
+        book = BookModel.query.filter_by(id = id).first()
+        if not book:
+            return {"message": "Book does not exist"}
+        return render_template("feedback.html", isbn = book.isbn)        
 
     isbn = request.form.get("isbn")
     feedback = request.form.get("feedback")
@@ -394,10 +403,10 @@ def librarianDashboarRevokeAccess():
 @login_required
 @check_role(role = "Librarian")
 def revokeAccess():
-    isbn = request.args.get("isbn")
+    id = request.args.get("id")
     username = request.args.get("username")
 
-    book = BookModel.query.filter_by(isbn = isbn).first()
+    book = BookModel.query.filter_by(id = id).first()
     if not book:
         return {"message": "Book does not exist"}, 404
 
@@ -520,6 +529,11 @@ def removeBook():
     if not book:
         return {"message": "Book does not exist"}
     
+    BookAuthorModel.query.filter_by(book_id = id).delete()
+    BookRequestsModel.query.filter_by(book_id = id).delete()
+    BookIssueModel.query.filter_by(book_id = id).delete()
+    BookFeedbackModel.query.filter_by(book_id = id).delete()
+    
     BookModel.query.filter_by(id = id).delete()
     db.session.commit()
 
@@ -534,20 +548,11 @@ def viewBookStatus():
     if not book_issues:
         return {"message": "No book issues exist"}
     
-    usernames = [book_issue.username for book_issue in book_issues]
-
-    names = []
-    for username in usernames:
-        user_info = UserInfoModel.query.filter_by(username = username).first()
-        if not user_info:
-            return {"message": "User info does not exist"}
-        name = user_info.first_name
-        if user_info.last_name:
-            name += f" {user_info.last_name}"
-
-        names.append(name)
-
-    return render_template("viewBookStatus.html",id = id, book_issues = book_issues, usernames = usernames, names = names)
+    book_and_users = BookIssueModel.query.filter_by(book_id = id).join(UserInfoModel, onclause = BookIssueModel.username == UserInfoModel.username).with_entities(BookIssueModel.book_id, BookIssueModel.username, BookIssueModel.date_of_issue, BookIssueModel.date_of_return, UserInfoModel.first_name, UserInfoModel.last_name, UserInfoModel.role).all()  # type: ignore
+    if not book_and_users:
+        return {"message": "User does not exist"}
+    
+    return render_template("viewBookStatus.html", id = id, book_and_users = book_and_users)
 
 
 if __name__ == "__main__":
