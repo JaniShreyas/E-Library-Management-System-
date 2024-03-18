@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>PDF.js 'Hello, world!' example</h1>
+    <button id="prevButton" disabled="true">Previous</button>
+    <button id="nextButton">Next</button>
+    <div>
+        <canvas id="pdf-canvas"></canvas>
+    </div>
+
+    <script src="{{url_for('static', filename='js/pdf.js')}}" type="module"></script>
+    <script type="module">
+        var url = "{{url_for('static', filename='books/book1.pdf')}}";
+        // Loaded via <script> tag, create shortcut to access PDF.js exports.
+        var { pdfjsLib } = globalThis;
+
+        // The workerSrc property shall be specified.
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.mjs';
+
+        // Asynchronous download of PDF
+        var loadingTask = pdfjsLib.getDocument(url);
+        var pdf = null;
+        var pageNum = 1;
+
+        loadingTask.promise.then(function (loadedPdf) {
+            console.log('PDF loaded');
+
+            // Fetch the first page
+            pdf = loadedPdf;
+            renderPage(pageNum);
+            document.getElementById('prevButton').onclick = previousPage;
+            document.getElementById('nextButton').onclick = nextPage;
+
+        }, function (reason) {
+            // PDF loading error
+            console.error(reason);
+        });
+
+        function renderPage(num) {
+
+            pdf.getPage(num).then(function (page) {
+                console.log('Page loaded');
+
+                var scale = 1.5;
+                var viewport = page.getViewport({ scale: scale });
+
+                // Prepare canvas using PDF page dimensions
+                // Create canvas
+                var canvas = document.getElementById('pdf-canvas');
+                var context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                // Append canvas to the body
+                document.body.appendChild(canvas);
+
+                // Render PDF page into canvas context
+                var renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+                renderTask.promise.then(function () { });
+            });
+
+        }
+
+        function nextPage() {
+            if (pdf != null) {
+                if (pageNum >= pdf.numPages) {
+                    return;
+                }
+                pageNum++;
+                // if cannot go to next page, disable
+                if (pageNum >= pdf.numPages) {
+                    document.getElementById('nextButton').disabled = true;
+                }
+                if (pageNum > 1) {
+                    document.getElementById('prevButton').disabled = false;
+                }
+                renderPage(pageNum);
+            }
+        }
+
+        function previousPage() {
+            if (pdf != null) {
+                if (pageNum <= 1) {
+                    return;
+                }
+                pageNum--;
+                // if cannot go to previous page, disable
+                if (pageNum <= 1) {
+                    document.getElementById('prevButton').disabled = true;
+                }
+                if (pageNum < pdf.numPages) {
+                    document.getElementById('nextButton').disabled = false;
+                }
+                renderPage(pageNum);
+            }
+        }
+
+
+    </script>
+
+</body>
+
+</html>

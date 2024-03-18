@@ -2,7 +2,6 @@ from hmac import new
 from tabnanny import check
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from numpy import delete
 from sqlalchemy import desc
 from sqlalchemy.orm import aliased
 from models import (
@@ -35,7 +34,6 @@ login_manager.init_app(app)
 app.register_blueprint(api_bp)
 
 login_manager = LoginManager()
-
 
 @login_manager.user_loader
 def load_user(id):
@@ -554,6 +552,9 @@ def viewBookStatus():
     
     return render_template("viewBookStatus.html", id = id, book_and_users = book_and_users)
 
+@app.route("/testBookView", methods = ["GET"])
+def testBookView():
+    return render_template('iframeTest.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
