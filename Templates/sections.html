@@ -3,13 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/bootstrap.min.css">
     <title>Sections</title>
 </head>
-<body>
+<!-- <body>
+    <div class="card" style="width: 18rem;">
+        <img class="card-img-top" src="..." alt="Card image cap">
+        <div class="card-body">
+          <h5 class="card-title">Card title</h5>
+          <p class="card-text">Some quick example text to build on the card <br> title and make up the bulk of the card's content.</p>
+          <a href="#" class="btn btn-primary">Go somewhere</a>
+        </div>
+      </div> -->
+
+    </div>
     <div>
         {% for section in sections: %}
-        <div>{{("section_id", section.id), ("name", section.name), 
-            ("date_created", section.date_created), ("description", section.description)}}</div>
+        <br>
+        <div class="card" style="width: 18rem;">
+            <div class="card-body">
+                <h5>
+                    ID: {{section.id}} <br>
+                    Name: {{section.name}} <br>
+
+                </h5>
+            </div>
+        </div>
+        <br>
         {% if role == "Librarian": %}
         <button onclick="window.location.href='/editSection?id={{section.id}}'">Edit Section</button>
         <button onclick = "window.location.href='/{{section.name}}/addBook'">Add Book</button>

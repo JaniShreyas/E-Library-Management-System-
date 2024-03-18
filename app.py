@@ -1,9 +1,5 @@
-from hmac import new
-from tabnanny import check
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from sqlalchemy import desc
-from sqlalchemy.orm import aliased
 from models import (
     db,
     UserLoginModel,
@@ -16,7 +12,7 @@ from models import (
     BookFeedbackModel,
 )
 import os
-from blueprints.api import UserInfo, api_bp, check_role, login_manager, check_role
+from blueprints.api import api_bp, check_role, login_manager, check_role
 from datetime import datetime, timedelta
 from typing import List
 
@@ -42,8 +38,7 @@ def load_user(id):
 
 @app.route("/", methods=["GET"])
 def home():
-    return redirect("/librarianLogin")
-    # return render_template("home.html")
+    return render_template("home.html")
 
 
 @app.route("/librarianLogin", methods=["GET", "POST"])
@@ -75,7 +70,7 @@ def librarianLogin():
         flash(f"Incorrect Password")
         return redirect("/librarianLogin")
 
-    return redirect("/librarianDashboard/sections")
+    return redirect("/librarianDashboard")
 
 
 @app.route("/generalLogin", methods=["GET", "POST"])
@@ -109,7 +104,6 @@ def generalLogin():
 
     return redirect("/generalDashboard")
 
-
 @app.route("/logout", methods=["GET"])
 def logout():
     logout_user()
@@ -137,8 +131,7 @@ def addUser():
 
 @app.route("/librarianDashboard", methods = ["GET"])
 def librarianDashboard():
-    return ""
-
+    return render_template("librarianDashboard.html")
 
 @app.route("/librarianDashboard/sections", methods=["GET"])
 @login_required
@@ -552,9 +545,15 @@ def viewBookStatus():
     
     return render_template("viewBookStatus.html", id = id, book_and_users = book_and_users)
 
-@app.route("/testBookView", methods = ["GET"])
-def testBookView():
-    return render_template('iframeTest.html')
+@app.route("/readBook", methods = ["GET"])
+def readBook():
+    id = request.args.get("id")
+    book = BookModel.query.filter_by(id = id).first()
+    if not book:
+        return {"message": "Book does not exist"}
+    
+    return render_template("readBook.html", book = book)
+    
 
 if __name__ == "__main__":
     app.run(debug=True)

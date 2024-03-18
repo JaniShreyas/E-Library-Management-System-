@@ -21,6 +21,7 @@
             <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> <br>
             <button onclick="window.location.href='/librarianDashboard/viewBookStatus?id={{book.id}}'">View Status</button> <br> <br>
             {% endif %}
+            <button onclick="window.location.href='/readBook?id={{book.id}}'">Read Book</button>
         </div>
         {% endfor %}
     </div>
