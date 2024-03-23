@@ -43,7 +43,7 @@ def home():
     return render_template("home.html")
 
 
-@app.route("/librarianLogin", methods=["GET", "POST"])
+@app.route("/librarianLogin/", methods=["GET", "POST"])
 def librarianLogin():
     if request.method == "GET":
         return render_template("login.html", role="librarian")
@@ -75,7 +75,7 @@ def librarianLogin():
     return redirect("/librarianDashboard")
 
 
-@app.route("/generalLogin", methods=["GET", "POST"])
+@app.route("/generalLogin/", methods=["GET", "POST"])
 def generalLogin():
     if request.method == "GET":
         return render_template("login.html", role="general")
@@ -106,13 +106,13 @@ def generalLogin():
 
     return redirect("/generalDashboard")
 
-@app.route("/logout", methods=["GET"])
+@app.route("/logout/", methods=["GET"])
 def logout():
     logout_user()
     return redirect("/")
 
 
-@app.route("/addUser", methods=["GET", "POST"])
+@app.route("/addUser/", methods=["GET", "POST"])
 def addUser():
     if request.method == "GET":
         return render_template("addUser.html")
@@ -135,7 +135,7 @@ def addUser():
 def librarianDashboard():
     return render_template("librarianDashboard.html")
 
-@app.route("/librarianDashboard/sections", methods=["GET"])
+@app.route("/librarianDashboard/sections/", methods=["GET"])
 @login_required
 @check_role(role="Librarian")
 def sections():
@@ -147,7 +147,7 @@ def sections():
     return render_template("sections.html", sections=sections, role=role)
 
 
-@app.route("/addSection", methods=["GET", "POST"])
+@app.route("/addSection/", methods=["GET", "POST"])
 @login_required
 @check_role(role="Librarian")
 def addSection():
@@ -155,11 +155,18 @@ def addSection():
         return render_template("addSection.html")
 
     name = request.form.get("name")
+    if not name:
+        return {"message": "Name not provided"}
+    
+    name = name
+
     description = request.form.get("description")
 
+    section = SectionModel.query.filter_by(name = name).first()
+    if section:
+        return {"message": f"Section with name {name} already exists"}
 
-
-    section = SectionModel(name=name.capitalize(), description=description, date_created=datetime.now())  # type: ignore
+    section = SectionModel(name=name, description=description, date_created=datetime.now())  # type: ignore
 
     db.session.add(section)
     db.session.commit()
@@ -167,7 +174,7 @@ def addSection():
     return redirect("/librarianDashboard/sections")
 
 
-@app.route("/addBook", methods=["GET", "POST"])
+@app.route("/addBook/", methods=["GET", "POST"])
 @login_required
 @check_role(role="Librarian")
 def addBook():
@@ -214,11 +221,11 @@ def addBook():
 
 
 # Don't restrict by role since used by both users
-@app.route("/<section_name_from_url>/viewBooks", methods=["GET"])
+@app.route("/<section_name_from_url>/viewBooks/", methods=["GET"])
 @login_required
 def viewBooks(section_name_from_url):
 
-    section_name = section_name_from_url.capitalize()
+    section_name = section_name_from_url
     section = SectionModel.query.filter_by(name=section_name).first()
 
     if not section:
@@ -234,18 +241,24 @@ def viewBooks(section_name_from_url):
 
     return render_template("viewBooks.html", books=books, role = user_info.role)
 
-@app.route("/generalDashboard", methods=["GET"])
+@app.route("/generalDashboard/", methods=["GET"])
 @login_required
 def generalDashboard():
     return render_template("generalDashboard.html")
 
-@app.route("/generalDashboard/requestBooks", methods=["GET"])
+@app.route("/generalDashboard/requestBooks/", methods=["GET"])
 @login_required
 def requestBooks():
-    query = db.session.query(BookModel, SectionModel).join(SectionModel, onclause=SectionModel.id == BookModel.section_id).all()
-    return render_template("allBooks.html", books = query)
+    book_requests = BookRequestsModel.query.filter_by(username = current_user.username).all()
+    book_issues = BookIssueModel.query.filter_by(username = current_user.username).all()
 
-@app.route("/requestBook/<isbn>", methods = ["GET", "POST"])
+    issued_book_ids = [book_request.book_id for book_request in book_requests]
+    issued_book_ids.extend([book_issue.book_id for book_issue in book_issues])
+    print(issued_book_ids)
+    books = db.session.query(BookModel, SectionModel).join(SectionModel, onclause=SectionModel.id == BookModel.section_id).all()
+    return render_template("allBooks.html", books = books, issued_book_ids = issued_book_ids)
+
+@app.route("/requestBook/<isbn>/", methods = ["GET", "POST"])
 @login_required
 def requestBook(isbn: str):
     if request.method == "GET": 
@@ -280,7 +293,7 @@ def requestBook(isbn: str):
 
     return redirect("/generalDashboard/requestBooks")
 
-@app.route("/generalDashboard/books", methods = ["GET", "POST"])
+@app.route("/generalDashboard/books/", methods = ["GET", "POST"])
 @login_required
 def generalBooks():
     if request.method == "GET":
@@ -292,14 +305,14 @@ def generalBooks():
     
     return ""
 
-@app.route("/librarianDashboard/viewRequests", methods = ["GET"])
+@app.route("/librarianDashboard/viewRequests/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def viewRequests():
     book_requests = BookRequestsModel.query.all()
     return render_template("viewRequests.html", requests = book_requests)
 
-@app.route("/viewRequests/dealWithRequest", methods = ["GET"])
+@app.route("/viewRequests/dealWithRequest/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def dealWithRequest():
@@ -337,7 +350,7 @@ def dealWithRequest():
         db.session.commit()
         return redirect("/librarianDashboard/viewRequests")
 
-@app.route("/returnBook", methods=["GET"])
+@app.route("/returnBook/", methods=["GET"])
 @login_required
 def returnBook():
     id = request.args.get("id")
@@ -355,7 +368,7 @@ def returnBook():
 
     return redirect(f"/feedback?id={id}")
 
-@app.route("/feedback", methods = ["GET", "POST"])
+@app.route("/feedback/", methods = ["GET", "POST"])
 @login_required
 def feedback():
     if request.method == "GET":
@@ -378,7 +391,7 @@ def feedback():
 
     return redirect("/generalDashboard/books")
 
-@app.route("/generalDashboard/sections", methods = ["GET"])
+@app.route("/generalDashboard/sections/", methods = ["GET"])
 @login_required
 def generalViewSections():
     sections = SectionModel.query.all()
@@ -388,7 +401,7 @@ def generalViewSections():
     role = user_info.role
     return render_template("sections.html", sections=sections, role = role)
 
-@app.route("/librarianDashboard/revokeAccess", methods = ["GET"])
+@app.route("/librarianDashboard/revokeAccess/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def librarianDashboarRevokeAccess():
@@ -396,7 +409,7 @@ def librarianDashboarRevokeAccess():
     book_issues = BookIssueModel.query.all()
     return render_template("revokeAccess.html", book_issues = book_issues)
 
-@app.route("/revokeAccess", methods = ["GET"])
+@app.route("/revokeAccess/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def revokeAccess():
@@ -416,7 +429,7 @@ def revokeAccess():
 
     return redirect("/librarianDashboard/revokeAccess")
 
-@app.route("/editSection", methods = ["GET", "POST"])
+@app.route("/editSection/", methods = ["GET", "POST"])
 @login_required
 @check_role(role = "Librarian")
 def editSection():
@@ -444,7 +457,7 @@ def editSection():
     db.session.commit()
     return redirect("/librarianDashboard/sections")
 
-@app.route("/editBook", methods = ["GET", "POST"])
+@app.route("/editBook/", methods = ["GET", "POST"])
 @login_required
 @check_role(role = "Librarian")
 def editBook():
@@ -517,7 +530,7 @@ def editBook():
 
     return redirect("librarianDashboard/sections")
 
-@app.route("/removeSection", methods = ["GET"])
+@app.route("/removeSection/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def removeSection():
@@ -539,7 +552,7 @@ def removeSection():
 
     return redirect("/librarianDashboard/sections")
 
-@app.route("/removeBook", methods = ["GET"])
+@app.route("/removeBook/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def removeBook():
@@ -558,7 +571,7 @@ def removeBook():
 
     return redirect("librarianDashboard/sections")
 
-@app.route("/librarianDashboard/viewBookStatus", methods = ["GET"])
+@app.route("/librarianDashboard/viewBookStatus/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def viewBookStatus():
@@ -573,7 +586,7 @@ def viewBookStatus():
     
     return render_template("viewBookStatus.html", id = id, book_and_users = book_and_users)
 
-@app.route("/readBook", methods = ["GET"])
+@app.route("/readBook/", methods = ["GET"])
 def readBook():
     id = request.args.get("id")
     book = BookModel.query.filter_by(id = id).first()

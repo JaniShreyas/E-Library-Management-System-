@@ -3,19 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/bootstrap.min.css">
+    <link rel="stylesheet" href="/../static/bootstrap.min.css">
     <title>Sections</title>
 </head>
-<!-- <body>
-    <div class="card" style="width: 18rem;">
-        <img class="card-img-top" src="..." alt="Card image cap">
-        <div class="card-body">
-          <h5 class="card-title">Card title</h5>
-          <p class="card-text">Some quick example text to build on the card <br> title and make up the bulk of the card's content.</p>
-          <a href="#" class="btn btn-primary">Go somewhere</a>
-        </div>
-      </div> -->
-
     </div>
     <div>
         {% for section in sections: %}
@@ -25,8 +15,11 @@
                 <h5>
                     ID: {{section.id}} <br>
                     Name: {{section.name}} <br>
+                    {% if section.description %}
                     Description: {{section.description}} <br>
-
+                    {% else %}
+                    Description: No description
+                    {% endif %}
                 </h5>
             </div>
         </div>
@@ -43,7 +36,9 @@
     </div>
 
     <div>
+        {% if role == "Librarian" %}
         <button onclick="window.location.href='/addSection'">Add Section</button>
+        {% endif %}
     </div>
 </body>
 </html>

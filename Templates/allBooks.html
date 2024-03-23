@@ -8,12 +8,18 @@
 <body>
     <div>
         {% for book, section in books: %}
-        ISBN: {{book.isbn}} <br>
-        Name: {{book.name}} <br>
-        Publisher: {{book.publisher}} <br>
-        Volume: {{book.volume}} <br>
-        Section: {{section.name}} <br>
-        <button onclick="window.location.href='/requestBook/{{book.isbn}}'">Request Book</button> <br>
+            ISBN: {{book.isbn}} <br>
+            Name: {{book.name}} <br>
+            Publisher: {{book.publisher}} <br>
+            Volume: {{book.volume}} <br>
+            Section: {{section.name}} <br>
+            {% set flag = False %}
+            {% for issued_book_id in issued_book_ids if issued_book_id == book.id %}
+            [Book already requested or issued] <br>
+            {% else %}
+            <button onclick="window.location.href='/requestBook/{{book.isbn}}'">Request Book</button> <br>
+            {% endfor %}
+            <br>
         {% endfor %}
     </div>
 </body>

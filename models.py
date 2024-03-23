@@ -1,5 +1,5 @@
 from enum import auto
-from sqlalchemy import Integer, String, Column, ForeignKey, DateTime
+from sqlalchemy import Integer, String, Column, ForeignKey, DateTime, distinct
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
@@ -25,7 +25,7 @@ class UserInfoModel(db.Model):
 class SectionModel(db.Model):
     __tablename__ = "section"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(20), nullable=False)
+    name = Column(String(20), nullable=False, unique=True)
     date_created = Column(DateTime, nullable=False)
     description = Column(String(100), nullable=False)
 
