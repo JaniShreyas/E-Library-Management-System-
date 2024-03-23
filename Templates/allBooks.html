@@ -8,9 +8,10 @@
 <body>
     <div>
         {% for book, section in books: %}
-        ID: {{book.id}} <br>
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
+        Publisher: {{book.publisher}} <br>
+        Volume: {{book.volume}} <br>
         Section: {{section.name}} <br>
         <button onclick="window.location.href='/requestBook/{{book.isbn}}'">Request Book</button> <br>
         {% endfor %}

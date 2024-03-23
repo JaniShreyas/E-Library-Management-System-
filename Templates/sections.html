@@ -25,6 +25,7 @@
                 <h5>
                     ID: {{section.id}} <br>
                     Name: {{section.name}} <br>
+                    Description: {{section.description}} <br>
 
                 </h5>
             </div>
@@ -32,10 +33,12 @@
         <br>
         {% if role == "Librarian": %}
         <button onclick="window.location.href='/editSection?id={{section.id}}'">Edit Section</button>
-        <button onclick = "window.location.href='/{{section.name}}/addBook'">Add Book</button>
+        <button onclick = "window.location.href='/addBook?section_id={{section.id}}'">Add Book</button>
+        {% if section.id != 0 %}
         <button onclick="window.location.href='/removeSection?id={{section.id}}'">Remove Section</button>
         {% endif %}
-        <button onclick = "window.location.href='/{{section.name}}/viewBooks'">View Books</button>
+        {% endif %}
+        <button onclick = "window.location.href='/{{section.name}}/viewBooks'">View Books</button> <br>
         {% endfor %}
     </div>
 

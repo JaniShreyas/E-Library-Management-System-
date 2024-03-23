@@ -38,6 +38,7 @@ class BookModel(db.Model):
     page_count = Column(Integer, nullable=False)
     content = Column(String, nullable=False)
     publisher = Column(String(100), nullable=False)
+    volume = Column(Integer, nullable = False)
     section_id = Column(Integer, ForeignKey("section.id"), nullable=False)
 
 

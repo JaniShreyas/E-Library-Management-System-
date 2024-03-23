@@ -9,12 +9,11 @@
     This will show stats
 
     <div>
-        {% if role == "Librarian": %}
-        For Librarian
-        {% else %}
-        General User
-        [This should have relevant hyperlinks]
-        {% endif %}
+        General User <br>
+        <a href="/generalDashboard/books">View Books</a>
+        <a href="/generalDashboard/requestBooks">Request Books</a>
+        <a href="/generalDashboard/sections">View Sections</a>
+        <a href="/logout">Logout</a>
     </div>
 </body>
 </html>

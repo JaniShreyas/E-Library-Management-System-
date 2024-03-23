@@ -592,7 +592,7 @@ class RemoveSection(Resource):
             if not section:
                 return {"message": f"Section {name} does not exist"}, 404
 
-            BookModel.query.filter_by(section_id=section.id).update({"section_id": -1})
+            BookModel.query.filter_by(section_id=section.id).update({"section_id": 0})
             SectionModel.query.filter_by(name=name).delete()
             db.session.commit()
 

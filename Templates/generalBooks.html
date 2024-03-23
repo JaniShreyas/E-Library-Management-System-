@@ -9,10 +9,10 @@
     <div>
         <h2>Issued Books: </h2>
         {% for bookRequest, book in issued %}
-        ID: {{book.id}} <br>
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
         [Baaki saman yahan pe] <br>
+        <a href="/readBook?id={{book.id}}"><button>Read Book</button></a>
         <button onclick="window.location.href='/returnBook?id={{book.id}}'">Return Book</button> <br> <br>
 
         {% endfor %}

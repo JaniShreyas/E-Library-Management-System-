@@ -31,6 +31,8 @@ app.register_blueprint(api_bp)
 
 login_manager = LoginManager()
 
+max_issue_time = 7
+
 @login_manager.user_loader
 def load_user(id):
     return UserLoginModel.query.get(id)
@@ -126,10 +128,10 @@ def addUser():
     db.session.add(userLogin)
     db.session.add(userInfo)
     db.session.commit()
-
+    login_user(userLogin)
     return redirect("/generalDashboard")
 
-@app.route("/librarianDashboard", methods = ["GET"])
+@app.route("/librarianDashboard/", methods = ["GET"])
 def librarianDashboard():
     return render_template("librarianDashboard.html")
 
@@ -154,6 +156,9 @@ def addSection():
 
     name = request.form.get("name")
     description = request.form.get("description")
+
+
+
     section = SectionModel(name=name.capitalize(), description=description, date_created=datetime.now())  # type: ignore
 
     db.session.add(section)
@@ -162,22 +167,25 @@ def addSection():
     return redirect("/librarianDashboard/sections")
 
 
-@app.route("/<section_name_from_url>/addBook", methods=["GET", "POST"])
+@app.route("/addBook", methods=["GET", "POST"])
 @login_required
 @check_role(role="Librarian")
-def addBook(section_name_from_url: str):
+def addBook():
     if request.method == "GET":
-        return render_template("addBook.html", section=section_name_from_url)
+        section_id = request.args.get("section_id")
+        return render_template("addBook.html", section_id=section_id)
+
+    section_id = request.args.get("section_id")
 
     isbn = request.form.get("isbn")
     book_name = request.form.get("book_name")
     page_count = request.form.get("page_count")
     content_path = request.form.get("content")
     publisher = request.form.get("publisher")
-    section_name = section_name_from_url.capitalize()
+    volume = request.form.get("volume")
     author_names = request.form.get("author_names")
 
-    section = SectionModel.query.filter_by(name=section_name).first()
+    section = SectionModel.query.filter_by(id = section_id).first()
 
     if not section:
         return {"message": "Section does not exist"}, 404
@@ -192,7 +200,8 @@ def addBook(section_name_from_url: str):
     if book:
         return {"message": "Book already exists"}, 400
 
-    book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, publisher=publisher, section_id=section.id)  # type: ignore
+    book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, 
+                     publisher=publisher, volume = volume, section_id=section.id)  # type: ignore
     db.session.add(book)
     db.session.commit()
 
@@ -215,23 +224,20 @@ def viewBooks(section_name_from_url):
     if not section:
         return {"message": "Section not found"}
 
-    books = BookModel.query.filter_by(section_id=section.id)
+    books = BookModel.query.filter_by(section_id=section.id).all()
 
     user_info = UserInfoModel.query.filter_by(username = current_user.username).first()
     if not user_info:
         return {"message": "User info does not exist"}
+    
+    print(books)
 
     return render_template("viewBooks.html", books=books, role = user_info.role)
-
 
 @app.route("/generalDashboard", methods=["GET"])
 @login_required
 def generalDashboard():
-    info = UserInfoModel.query.filter_by(username=current_user.username).first()
-    if not info:
-        return {"message": "User info does not exist"}
-    return render_template("dashboardStats.html", role=info.role)
-
+    return render_template("generalDashboard.html")
 
 @app.route("/generalDashboard/requestBooks", methods=["GET"])
 @login_required
@@ -253,7 +259,7 @@ def requestBook(isbn: str):
     
     issue_time = int(request.form.get("issue_time", 8))
 
-    if not (1 < issue_time < 8):
+    if not (1 <= issue_time <= max_issue_time):
         return {"message": "Issue time should be in range (1,7)"}
     
     book = BookModel.query.filter_by(isbn = isbn).first()
@@ -415,10 +421,12 @@ def revokeAccess():
 @check_role(role = "Librarian")
 def editSection():
     id = request.args.get("id")
+    section = SectionModel.query.filter_by(id = id).first()
     if request.method == "GET":
-        return render_template("editSection.html", id = id)
+        return render_template("editSection.html", section = section)
     
-    id = request.form.get("id")
+    id = request.args.get("id")
+
     name = request.form.get("name")
     description = request.form.get("description")
 
@@ -442,24 +450,38 @@ def editSection():
 def editBook():
     if request.method == "GET":
         id = request.args.get("id")
-        return render_template("editBook.html", id = id)
+        book = BookModel.query.filter_by(id = id).first()
+        if not book:
+            return {"message": "Book not found"}
+
+        book_author = BookAuthorModel.query.filter_by(book_id = id).all()
+        if not book_author:
+            return {"message": "Book Author not found"}
+        
+        section = SectionModel.query.filter_by(id = book.section_id).first()
+        if not section: 
+            return {"message": "Section not found"}
+
+        return render_template("editBook.html", book = book, book_author = book_author, section = section)
     
-    book_id = request.form.get("book_id")
-    new_isbn = request.form.get("new_isbn")
+    book_id = request.args.get("id")
+
+    isbn = request.form.get("isbn")
     name = request.form.get("name")
     old_author = request.form.get("old_author")
     new_author = request.form.get("new_author")
     page_count = request.form.get("page_count")
     content_path = request.form.get("content_path")
     publisher = request.form.get("publisher")
+    volume = request.form.get("volume")
     section_name = request.form.get("section_name")
     
     book = BookModel.query.filter_by(id = book_id).first()
     if not book:
         return {"message": "Book does not exist"}
 
-    if new_isbn:
-        book.isbn = new_isbn
+    if isbn:
+        book.isbn = isbn
 
     if section_name:
         section = SectionModel.query.filter_by(name = section_name).first()
@@ -488,6 +510,9 @@ def editBook():
     if publisher:
         book.publisher = publisher
 
+    if volume: 
+        book.volume = volume
+
     db.session.commit()
 
     return redirect("librarianDashboard/sections")
@@ -497,6 +522,9 @@ def editBook():
 @check_role(role = "Librarian")
 def removeSection():
     id = request.args.get("id")
+    if id == 0:
+        return {"message": "Unassigned cannot be removed"}
+
     if not id:
         return {"message": "ID not provided"}
     
@@ -504,7 +532,7 @@ def removeSection():
     if not section:
         return {"message": "Section not found"}
 
-    books = BookModel.query.filter_by(section_id = id).update({"section_id": -1})
+    books = BookModel.query.filter_by(section_id = id).update({"section_id": 0})
     SectionModel.query.filter_by(id = id).delete()
     
     db.session.commit()

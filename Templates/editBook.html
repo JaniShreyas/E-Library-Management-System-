@@ -7,25 +7,29 @@
 </head>
 <body>
     <div>
-        <form class="editBookForm" action="/editBook" method="post">
-            <label for="book_id">Book ID</label>
-            <input readonly id="book_id" type="text" name="book_id" value = {{id}}></input>
-            <label for="new_isbn">New ISBN</label>
-            <input id="new_isbn" type="text" name="new_isbn"></input>
+        <h3>Edit Book {{book.name}}</h3> <br>
+    </div>
+
+    <div>
+        <form class="editBookForm" action="/editBook?id={{book.id}}" method="post">
+            <label for="isbn">ISBN</label>
+            <input id="isbn" type="text" name="isbn" value="{{book.isbn}}"></input>
             <label for="name">Name</label>
-            <input id="name" type="text" name="name"></input>
+            <input id="name" type="text" name="name" value="{{book.name}}"></input>
             <label for="old_author">Old Author</label>
             <input id="old_author" type="text" name="old_author"></input>
             <label for="new_author">New Author</label>
             <input id="new_author" type="text" name="new_author"></input>
             <label for="page_count">Page Count</label>
-            <input id="page_count" type="text" name="page_count"></input>
+            <input id="page_count" type="text" name="page_count" value="{{book.page_count}}"></input>
             <label for="content_path">Content Path</label>
-            <input id="content_path" type="text" name="content_path"></input>
+            <input id="content_path" type="text" name="content_path" value="{{book.content}}"></input>
             <label for="publisher">Publisher</label>
-            <input id="publisher" type="text" name="publisher"></input>
+            <input id="publisher" type="text" name="publisher" value="{{book.publisher}}"></input>
+            <label for="volume">Publisher</label>
+            <input id="volume" type="text" name="volume" value="{{book.volume}}"></input>
             <label for="section_name">Section Name</label>
-            <input id="section_name" type="text" name="section_name"></input>
+            <input id="section_name" type="text" name="section_name" value="{{section.name}}"></input>
             <input class="submit" type="submit">
         </form>
     </div>
