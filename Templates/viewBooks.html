@@ -19,16 +19,16 @@
             Publisher: {{book.publisher}} <br>
             Volume: {{book.volume}} <br>
             
+            {% if (role == "Librarian") %}
             <button onclick="window.location.href='/readBook?id={{book.id}}'">Read Book</button> <br>
-
-            {% if role == "Librarian": %}
             <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> <br>
             <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> <br>
             <button onclick="window.location.href='/librarianDashboard/viewBookStatus?id={{book.id}}'">View Status</button> <br> <br>
-            <a href="/addBook?section_id={{book.section_id}}"><button>Add Book</button></a>
             {% endif %}
         </div>
         {% endfor %}
+
+        <a href="/addBook?section_id={{section_id}}"><button>Add Book</button></a>
     </div>
 </body>
 </html>

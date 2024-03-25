@@ -123,6 +123,10 @@ def addUser():
     last_name = request.form.get("last_name")
     role = "General"
 
+    user_login = UserLoginModel.query.filter_by(username = username).first()
+    if user_login:
+        return {"message": "Username already exists"}
+
     userLogin = UserLoginModel(username=username, password=password)  # type: ignore
     userInfo = UserInfoModel(username=username, first_name=first_name, last_name=last_name, role=role)  # type: ignore
     db.session.add(userLogin)
@@ -144,7 +148,7 @@ def sections():
     if not user_info:
         return {"message": "User info does not exist"}
     role = user_info.role
-    return render_template("sections.html", sections=sections, role=role)
+    return render_template("/sections.html", sections=sections, role=role)
 
 
 @app.route("/addSection/", methods=["GET", "POST"])
@@ -157,8 +161,6 @@ def addSection():
     name = request.form.get("name")
     if not name:
         return {"message": "Name not provided"}
-    
-    name = name
 
     description = request.form.get("description")
 
@@ -239,7 +241,7 @@ def viewBooks(section_name_from_url):
     
     print(books)
 
-    return render_template("viewBooks.html", books=books, role = user_info.role)
+    return render_template("viewBooks.html",section_id = section.id, books=books, role = user_info.role)
 
 @app.route("/generalDashboard/", methods=["GET"])
 @login_required
@@ -299,6 +301,13 @@ def generalBooks():
     if request.method == "GET":
 
         requested = db.session.query(BookRequestsModel, BookModel).join(BookRequestsModel, onclause=BookRequestsModel.book_id == BookModel.id).filter_by(username = current_user.username).all()
+        issued = db.session.query(BookIssueModel, BookModel).join(BookIssueModel, onclause=BookIssueModel.book_id == BookModel.id).filter_by(username = current_user.username).all()
+
+        for issued_book, book in issued:
+            if issued_book.date_of_return < datetime.now():
+                BookIssueModel.query.filter_by(book_id = issued_book.book_id, username = current_user.username).delete()
+
+        db.session.commit()
         issued = db.session.query(BookIssueModel, BookModel).join(BookIssueModel, onclause=BookIssueModel.book_id == BookModel.id).filter_by(username = current_user.username).all()
 
         return render_template("generalBooks.html", issued = issued, requested = requested)
@@ -406,7 +415,10 @@ def generalViewSections():
 @check_role(role = "Librarian")
 def librarianDashboarRevokeAccess():
     
-    book_issues = BookIssueModel.query.all()
+    book_issues = BookIssueModel.query\
+        .join(BookModel, onclause=BookIssueModel.book_id == BookModel.id)\
+        .with_entities(BookModel.name, BookIssueModel.username).all()
+    
     return render_template("revokeAccess.html", book_issues = book_issues)
 
 @app.route("/revokeAccess/", methods = ["GET"])
@@ -442,6 +454,10 @@ def editSection():
 
     name = request.form.get("name")
     description = request.form.get("description")
+
+    section = SectionModel.query.filter_by(name = name).first()
+    if section:
+        return {"message": "Section name already exists"}
 
     section = SectionModel.query.filter_by(id = id).first()
     
@@ -481,8 +497,7 @@ def editBook():
 
     isbn = request.form.get("isbn")
     name = request.form.get("name")
-    old_author = request.form.get("old_author")
-    new_author = request.form.get("new_author")
+    authors = request.form.get("authors")
     page_count = request.form.get("page_count")
     content_path = request.form.get("content_path")
     publisher = request.form.get("publisher")
@@ -505,14 +520,13 @@ def editBook():
     if name:
         book.name = name
 
-    if old_author:
-        if not new_author:
-            return {"message": "New Author name not given"}
+    if authors:
+        author_list = authors.split(',')
+        BookAuthorModel.query.filter_by(book_id = book_id).delete()
 
-        book_author = BookAuthorModel.query.filter_by(book_id = book_id, author_name = old_author).first()
-        if not book_author:
-            return {"message": "Author does not exist"}
-        book_author.author_name = new_author
+        for author in author_list:
+            book_author = BookAuthorModel(book_id = book_id, author_name = author)  # type: ignore
+            db.session.add(book_author)
 
     if page_count:
         book.page_count = page_count
@@ -528,14 +542,14 @@ def editBook():
 
     db.session.commit()
 
-    return redirect("librarianDashboard/sections")
+    return redirect("/librarianDashboard/sections")
 
 @app.route("/removeSection/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def removeSection():
     id = request.args.get("id")
-    if id == 0:
+    if id == '0':
         return {"message": "Unassigned cannot be removed"}
 
     if not id:
@@ -569,7 +583,7 @@ def removeBook():
     BookModel.query.filter_by(id = id).delete()
     db.session.commit()
 
-    return redirect("librarianDashboard/sections")
+    return redirect("/librarianDashboard/sections")
 
 @app.route("/librarianDashboard/viewBookStatus/", methods = ["GET"])
 @login_required
@@ -580,7 +594,11 @@ def viewBookStatus():
     if not book_issues:
         return {"message": "No book issues exist"}
     
-    book_and_users = BookIssueModel.query.filter_by(book_id = id).join(UserInfoModel, onclause = BookIssueModel.username == UserInfoModel.username).with_entities(BookIssueModel.book_id, BookIssueModel.username, BookIssueModel.date_of_issue, BookIssueModel.date_of_return, UserInfoModel.first_name, UserInfoModel.last_name, UserInfoModel.role).all()  # type: ignore
+    book_and_users = BookIssueModel.query.filter_by(book_id = id)\
+        .join(UserInfoModel, onclause = BookIssueModel.username == UserInfoModel.username)\
+        .with_entities(BookIssueModel.book_id, BookIssueModel.username, BookIssueModel.date_of_issue, 
+                       BookIssueModel.date_of_return, UserInfoModel.first_name, UserInfoModel.last_name,
+                       UserInfoModel.role).all()  # type: ignore
     if not book_and_users:
         return {"message": "User does not exist"}
     
@@ -593,7 +611,9 @@ def readBook():
     if not book:
         return {"message": "Book does not exist"}
     
-    return render_template("readBook.html", book = book)
+    
+
+    return render_template("/readBook.html", book = book)
     
 
 if __name__ == "__main__":
