@@ -25,6 +25,7 @@
             <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> <br>
             <button onclick="window.location.href='/librarianDashboard/viewBookStatus?id={{book.id}}'">View Status</button> <br> <br>
             {% endif %}
+            <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
         </div>
         {% endfor %}
 

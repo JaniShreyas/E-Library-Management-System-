@@ -385,12 +385,12 @@ def feedback():
         book = BookModel.query.filter_by(id = id).first()
         if not book:
             return {"message": "Book does not exist"}
-        return render_template("feedback.html", isbn = book.isbn)        
+        return render_template("feedback.html", book = book)        
 
-    isbn = request.form.get("isbn")
+    id = request.args.get("id")
     feedback = request.form.get("feedback")
 
-    book = BookModel.query.filter_by(isbn = isbn).first()
+    book = BookModel.query.filter_by(id = id).first()
     if not book:
         return {"message": "Book does not exist"}, 404
 
@@ -610,11 +610,31 @@ def readBook():
     book = BookModel.query.filter_by(id = id).first()
     if not book:
         return {"message": "Book does not exist"}
-    
-    
 
     return render_template("/readBook.html", book = book)
+
+@app.route("/readFeedback", methods = ["GET"])
+@login_required
+def readFeedback():
+    id = request.args.get("id")
+
+    if not id:
+        book_feedbacks = BookFeedbackModel.query\
+            .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)\
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookFeedbackModel.username, BookFeedbackModel.feedback).all()
+        if not book_feedbacks:
+            return {"message": "Book Feedback does not exist"}
     
+        return render_template("readFeedback.html", book_feedbacks = book_feedbacks)
+    else:
+        book_feedbacks = BookFeedbackModel.query.filter_by(book_id = id)\
+            .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)\
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookFeedbackModel.username, BookFeedbackModel.feedback).all()
+        
+        if not book_feedbacks:
+            return {"message": "Book Feedback does not exist"}
+
+        return render_template("readSpecificFeedback.html", book_feedbacks = book_feedbacks)
 
 if __name__ == "__main__":
     app.run(debug=True)
