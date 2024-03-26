@@ -7,18 +7,12 @@
 </head>
 <body>
     <div>
-        <form action="/requestBooks/search">
-            <input type="search" placeholder="Search" aria-label="Search" name="search_word">
-            <button type="submit">Search</button>
-        </form>
-    </div>
-    <div>
-        {% for book, section in books: %}
+        {% for book in books: %}
             ISBN: {{book.isbn}} <br>
             Name: {{book.name}} <br>
             Publisher: {{book.publisher}} <br>
             Volume: {{book.volume}} <br>
-            Section: {{section.name}} <br>
+            Section: {{book.section_name}} <br>
             {% set flag = False %}
             {% for issued_book_id in issued_book_ids if issued_book_id == book.id %}
             [Book already requested or issued] <br>

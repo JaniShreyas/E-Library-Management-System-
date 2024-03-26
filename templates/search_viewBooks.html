@@ -8,17 +8,10 @@
 </head>
 <body>
     <div>
-        <form action="/viewBooks/{{books[0].section_id}}/search">
-            <input type="search" placeholder="Search" aria-label="Search" name="search_word">
-            <button type="submit">Search</button>
-        </form>
-        <br>
-    </div>
-    <div>
         {% if not books: %}
-        <h3>No Books exist in this section yet</h3>
-        {% endif %}
+        <h3>No matching books found</h3>
         
+        {% else %}
         {% for book in books: %}
         <div class="card" style="width: 18rem;">
             <div class="card-body">
@@ -45,7 +38,7 @@
         </div>
         {% endfor %}
         <br>
-        <a href="/addBook?section_id={{section_id}}"><button>Add Book</button></a>
+        {% endif %}
     </div>
 </body>
 </html>

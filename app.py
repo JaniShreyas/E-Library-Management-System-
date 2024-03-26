@@ -1,5 +1,8 @@
+from gettext import find
+from re import search
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from sqlalchemy import desc
 from models import (
     db,
     UserLoginModel,
@@ -32,6 +35,69 @@ app.register_blueprint(api_bp)
 login_manager = LoginManager()
 
 max_issue_time = 7
+
+def raw(input: str) -> str:
+    return input.lower().replace(' ', "")
+
+def findBooks(search_word: str, filter_section = None):
+    modified_search_word = '%'+raw(search_word)+'%'
+    all_hits = []
+
+    if filter_section:
+        book_hits = BookModel.query.filter(BookModel.search_word.like(modified_search_word)).filter_by(section_id = filter_section).all()
+
+        author_hits = BookAuthorModel.query.filter(BookAuthorModel.search_word.like(modified_search_word))\
+            .join(BookModel, onclause=BookAuthorModel.book_id == BookModel.id)\
+            .filter_by(section_id = filter_section)\
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookModel.content, 
+                            BookModel.page_count, BookModel.publisher, BookModel.volume, 
+                            BookModel.section_id, BookModel.search_word).all()
+        
+        section_hits = SectionModel.query.filter(SectionModel.search_word.like(modified_search_word))\
+            .join(BookModel, onclause=SectionModel.id == BookModel.section_id)\
+            .filter_by(section_id = filter_section)\
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookModel.content, 
+                        BookModel.page_count, BookModel.publisher, BookModel.volume, 
+                        BookModel.section_id, BookModel.search_word).all()
+        
+    else:
+        book_hits = BookModel.query.filter(BookModel.search_word.like(modified_search_word))\
+            .join(SectionModel, onclause=SectionModel.id == BookModel.section_id)\
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookModel.content, 
+                            BookModel.page_count, BookModel.publisher, BookModel.volume, 
+                            BookModel.section_id, BookModel.search_word, SectionModel.name.label("section_name")).all()
+
+        author_hits = BookAuthorModel.query.filter(BookAuthorModel.search_word.like(modified_search_word))\
+            .join(BookModel, onclause=BookAuthorModel.book_id == BookModel.id)\
+            .join(SectionModel, onclause=SectionModel.id == BookModel.section_id)\
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookModel.content, 
+                            BookModel.page_count, BookModel.publisher, BookModel.volume, 
+                            BookModel.section_id, BookModel.search_word, SectionModel.name.label("section_name")).all()
+        
+        section_hits = SectionModel.query.filter(SectionModel.search_word.like(modified_search_word))\
+            .join(BookModel, onclause=SectionModel.id == BookModel.section_id)\
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookModel.content, 
+                           BookModel.page_count, BookModel.publisher, BookModel.volume, 
+                           BookModel.section_id, BookModel.search_word, SectionModel.name.label("section_name")).all()
+    
+    if book_hits:
+        for book in book_hits:
+            # For unique books
+            if book.id in [book_hit.id for book_hit in all_hits]: continue
+            all_hits.append(book)
+
+    if author_hits:
+        for book in author_hits:
+            if book.id in [book_hit.id for book_hit in all_hits]: continue
+            all_hits.append(book)
+
+    if section_hits:
+        for book in section_hits:
+            if book.id in [book_hit.id for book_hit in all_hits]: continue
+            all_hits.append(book)
+
+    return all_hits
+
 
 @login_manager.user_loader
 def load_user(id):
@@ -164,11 +230,15 @@ def addSection():
 
     description = request.form.get("description")
 
+    search_word = raw(name)
+    if description:
+        search_word += raw(description)
+
     section = SectionModel.query.filter_by(name = name).first()
     if section:
         return {"message": f"Section with name {name} already exists"}
 
-    section = SectionModel(name=name, description=description, date_created=datetime.now())  # type: ignore
+    section = SectionModel(name=name, description=description, date_created=datetime.now(), search_word=search_word)  # type: ignore
 
     db.session.add(section)
     db.session.commit()
@@ -204,18 +274,28 @@ def addBook():
 
     author_names_list: List[str] = author_names.split(",")
 
+    if not book_name:
+        return {"message": "Book name not provided"}
+    if not isbn:
+        return {"message": "ISBN not provided"}
+    if not publisher:
+        return {"message": "Publisher not provided"}
+
     book = BookModel.query.filter_by(isbn=isbn).first()
 
     if book:
         return {"message": "Book already exists"}, 400
+    
+    search_word: str = raw(isbn) + raw(book_name) + raw(publisher) + raw(section.name)
 
     book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, 
-                     publisher=publisher, volume = volume, section_id=section.id)  # type: ignore
+                     publisher=publisher, volume = volume, section_id=section.id, search_word = search_word)  # type: ignore
     db.session.add(book)
     db.session.commit()
 
     for author_name in author_names_list:
-        author = BookAuthorModel(book_id=book.id, author_name=author_name)  # type: ignore
+        author_search_word: str = raw(author_name)
+        author = BookAuthorModel(book_id=book.id, author_name=author_name, search_word = author_search_word)  # type: ignore
         db.session.add(author)
     db.session.commit()
 
@@ -223,12 +303,11 @@ def addBook():
 
 
 # Don't restrict by role since used by both users
-@app.route("/<section_name_from_url>/viewBooks/", methods=["GET"])
+@app.route("/viewBooks/<section_id>", methods=["GET"])
 @login_required
-def viewBooks(section_name_from_url):
+def viewBooks(section_id):
 
-    section_name = section_name_from_url
-    section = SectionModel.query.filter_by(name=section_name).first()
+    section = SectionModel.query.filter_by(id = section_id).first()
 
     if not section:
         return {"message": "Section not found"}
@@ -455,20 +534,21 @@ def editSection():
     name = request.form.get("name")
     description = request.form.get("description")
 
-    section = SectionModel.query.filter_by(name = name).first()
-    if section:
-        return {"message": "Section name already exists"}
-
-    section = SectionModel.query.filter_by(id = id).first()
-    
-    if not section:
+    this_section = SectionModel.query.filter_by(id = id).first()
+    if not this_section:
         return {"message": "Section not found"}
 
+    section = SectionModel.query.filter_by(name = name).first()
+    if section and not section.id == this_section.id:
+        return {"message": "Section name already exists"}
+
     if name:
-        section.name = name
+        this_section.name = name
     
     if description:
-        section.description = description
+        this_section.description = description
+
+    this_section.search_word = raw(this_section.name) + raw(this_section.description)
 
     db.session.commit()
     return redirect("/librarianDashboard/sections")
@@ -525,7 +605,8 @@ def editBook():
         BookAuthorModel.query.filter_by(book_id = book_id).delete()
 
         for author in author_list:
-            book_author = BookAuthorModel(book_id = book_id, author_name = author)  # type: ignore
+            author_search_word = raw(author)
+            book_author = BookAuthorModel(book_id = book_id, author_name = author, search_word = author_search_word)  # type: ignore
             db.session.add(book_author)
 
     if page_count:
@@ -539,6 +620,8 @@ def editBook():
 
     if volume: 
         book.volume = volume
+
+    book.search_word = raw(book.isbn) + raw(book.name) + raw(book.publisher) + raw(section.name)
 
     db.session.commit()
 
@@ -635,6 +718,32 @@ def readFeedback():
             return {"message": "Book Feedback does not exist"}
 
         return render_template("readSpecificFeedback.html", book_feedbacks = book_feedbacks)
+
+@app.route("/sections/search", methods=["GET"])
+def searchSection():
+    search_word = request.args.get("search_word", default='')
+    modified_search_word = '%'+raw(search_word)+'%'
+
+    sections = SectionModel.query.filter(SectionModel.search_word.like(modified_search_word)).all()
+    return render_template("search_sections.html", sections = sections)
+
+@app.route("/viewBooks/<section_id>/search", methods = ["GET"])
+def searchViewBooks(section_id):
+
+    search_word = request.args.get("search_word", default='')
+    books = findBooks(search_word, filter_section = section_id)
+
+    return render_template("search_viewBooks.html", books = books)
+
+@app.route("/requestBooks/search", methods = ["GET"])
+def searchRequestBooks():
+    search_word = request.args.get("search_word", default ='')
+    books = findBooks(search_word)
+
+    for book in books:
+        print(book.section_name)
+
+    return render_template("search_allBooks.html", books = books)
 
 if __name__ == "__main__":
     app.run(debug=True)

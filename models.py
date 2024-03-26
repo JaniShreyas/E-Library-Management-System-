@@ -1,5 +1,5 @@
 from enum import auto
-from sqlalchemy import Integer, String, Column, ForeignKey, DateTime, distinct
+from sqlalchemy import Integer, String, Column, ForeignKey, DateTime, distinct, null
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
@@ -28,6 +28,7 @@ class SectionModel(db.Model):
     name = Column(String(20), nullable=False, unique=True)
     date_created = Column(DateTime, nullable=False)
     description = Column(String(100), nullable=False)
+    search_word = Column(String(150), nullable=False)
 
 
 class BookModel(db.Model):
@@ -40,12 +41,14 @@ class BookModel(db.Model):
     publisher = Column(String(100), nullable=False)
     volume = Column(Integer, nullable = False)
     section_id = Column(Integer, ForeignKey("section.id"), nullable=False)
+    search_word = Column(String(500), nullable=False)
 
 
 class BookAuthorModel(db.Model):
     __tablename__ = "book_author"
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
     author_name = Column(String(40), primary_key=True)
+    search_word = Column(String(40), nullable=False)
 
 
 class BookRequestsModel(db.Model):
