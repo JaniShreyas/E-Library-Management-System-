@@ -9,14 +9,14 @@ db = SQLAlchemy()
 # Models
 class UserLoginModel(db.Model, UserMixin):
     __tablename__ = "user_login"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(40), unique=True, nullable=False)
     password = Column(String(80), nullable=False)
 
 
 class UserInfoModel(db.Model):
     __tablename__ = "user_info"
-    username = Column(String(40), ForeignKey("user_login.username"), primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), unique=True, nullable=False, primary_key=True)
     first_name = Column(String(20), nullable=False)
     last_name = Column(String(20))
     role = Column(String(20), nullable=False)
@@ -54,7 +54,7 @@ class BookAuthorModel(db.Model):
 class BookRequestsModel(db.Model):
     __tablename__ = "book_request"
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
-    username = Column(String(40), ForeignKey("user_login.username"), primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
     date_of_request = Column(DateTime, nullable=False)
     issue_time = Column(Integer, nullable=False)
 
@@ -62,13 +62,13 @@ class BookRequestsModel(db.Model):
 class BookIssueModel(db.Model):
     __tablename__ = "book_issue"
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
-    username = Column(String(40), ForeignKey("user_login.username"), primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
     date_of_issue = Column(DateTime, nullable=False)
     date_of_return = Column(DateTime, nullable=False)
 
 
 class BookFeedbackModel(db.Model):
     __tablename__ = "book_feedback"
-    username = Column(String(40), ForeignKey("user_login.username"), primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
     feedback = Column(String(500), nullable=False)

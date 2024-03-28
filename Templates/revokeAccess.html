@@ -7,6 +7,10 @@
 </head>
 <body>
     <div>
+        {% if not book_issues %}
+        <h3>No Book Issues yet!</h3>
+        {% endif %}
+
         {% for book_issue in book_issues %}
         Book ID: {{book_issue.book_id}} <br>
         Book Name: {{book_issue.name}} <br>

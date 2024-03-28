@@ -21,6 +21,13 @@
                     Page Count: {{book.page_count}} <br>
                     Publisher: {{book.publisher}} <br>
                     Volume: {{book.volume}} <br>
+                    Authors:
+                    {% for book_author in book_authors %}
+                        {% if book_author.book_id == book.id: %}
+                        {{book_author.author_name}}
+                        {% endif %}
+                    {% endfor %}
+                    <br>
                 </h5>
             </div>
         </div>
@@ -33,6 +40,9 @@
             <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> 
             <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> 
             <button onclick="window.location.href='/librarianDashboard/viewBookStatus?id={{book.id}}'">View Status</button> 
+            {% endif %}
+            {% if role == "General" %}
+            <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a>
             {% endif %}
             <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
         </div>

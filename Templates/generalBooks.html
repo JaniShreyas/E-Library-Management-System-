@@ -7,10 +7,23 @@
 </head>
 <body>
     <div>
+        <form action="/generalDashboard/books/search">
+            <input type="search" placeholder="Search" aria-label="Search" name="search_word">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+    <div>
         <h2>Issued Books: </h2>
-        {% for bookRequest, book in issued %}
+        {% for bookIssue, book in issued %}
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
+        Authors:
+        {% for book_author in book_authors %}
+            {% if book_author.book_id == book.id: %}
+            {{book_author.author_name}}
+            {% endif %}
+        {% endfor %}
+        <br>
         [Baaki saman yahan pe] <br>
         <a href="/readBook?id={{book.id}}"><button>Read Book</button></a>
         <button onclick="window.location.href='/returnBook?id={{book.id}}'">Return Book</button> <br> <br>
@@ -18,11 +31,16 @@
         {% endfor %}
 
         <h2>Requested Books: </h2>
-        {% for bookIssue, book in requested %}
-        ID: {{book.id}} <br>
+        {% for bookRequest, book in requested %}
         ISBN: {{book.isbn}} <br>
         Name: {{book.name}} <br>
-
+        Authors:
+        {% for book_author in book_authors %}
+            {% if book_author.book_id == book.id: %}
+            {{book_author.author_name}}
+            {% endif %}
+        {% endfor %}
+        <br>
         [Baaki saman yahan pe bhi] <br><br>
 
         {% endfor %}

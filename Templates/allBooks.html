@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Books</title>
+    <title>Request Books</title>
 </head>
 <body>
     <div>
@@ -19,11 +19,17 @@
             Publisher: {{book.publisher}} <br>
             Volume: {{book.volume}} <br>
             Section: {{section.name}} <br>
-            {% set flag = False %}
+            Authors:
+            {% for book_author in book_authors %}
+                {% if book_author.book_id == book.id: %}
+                {{book_author.author_name}}
+                {% endif %}
+            {% endfor %}
+            <br>
             {% for issued_book_id in issued_book_ids if issued_book_id == book.id %}
             [Book already requested or issued] <br>
             {% else %}
-            <button onclick="window.location.href='/requestBook/{{book.isbn}}'">Request Book</button> <br>
+            <button onclick="window.location.href='/requestBook?id={{book.id}}'">Request Book</button> <br>
             {% endfor %}
             <br>
         {% endfor %}

@@ -19,7 +19,7 @@
             <label for="authors">Authors (comma separated)</label>
             <input id="authors" type="text" name="authors"></input>
             <label for="page_count">Page Count</label>
-            <input id="page_count" type="text" name="page_count" value="{{book.page_count}}"></input>
+            <input id="page_count" type="text" name="page_count" value="{{book.page_count}}" min="0"></input>
             <label for="content_path">Content Path</label>
             <input id="content_path" type="text" name="content_path" value="{{book.content}}"></input>
             <label for="publisher">Publisher</label>
@@ -27,8 +27,16 @@
             <label for="volume">Publisher</label>
             <input id="volume" type="text" name="volume" value="{{book.volume}}"></input>
             <label for="section_name">Section Name</label>
-            <input id="section_name" type="text" name="section_name" value="{{section.name}}"></input>
-            <input class="submit" type="submit">
+            <select name="section_name" id="section_name">
+                {% for section_iter in sections %}
+                    {% if section_iter.name == section.name %}
+                    <option value="{{section.name}}" selected>{{section.name}}</option>
+                    {% else %}
+                    <option value="{{section_iter.name}}">{{section_iter.name}}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <input class="submit" type="submit">Submit</input>
         </form>
     </div>
 </body>

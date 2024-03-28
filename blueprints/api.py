@@ -48,7 +48,7 @@ reqParser.add_argument("new_isbn", type=str)
 def check_role(role: str):
     def decorator(function: Callable):
         def wrapper(*args, **kwargs):
-            info = UserInfoModel.query.filter_by(username=current_user.username).first()
+            info = UserInfoModel.query.filter_by(uid=current_user.id).first()
 
             if not info:
                 return {"message": "Info not found"}, 404

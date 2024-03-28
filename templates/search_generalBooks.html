@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Books</title>
+</head>
+<body>
+    <div>
+        {% if (requested|length + issued|length) == 0: %}
+        <h3>No matching search results found!</h3>
+        {% else %}
+        <h2>Issued Books: </h2>
+        {% for book in issued %}
+        ISBN: {{book.isbn}} <br>
+        Name: {{book.name}} <br>
+        Authors:
+        {% for book_author in book_authors %}
+            {% if book_author.book_id == book.id: %}
+            {{book_author.author_name}}
+            {% endif %}
+        {% endfor %}
+        <br>
+        [Baaki saman yahan pe] <br>
+        <a href="/readBook?id={{book.id}}"><button>Read Book</button></a>
+        <button onclick="window.location.href='/returnBook?id={{book.id}}'">Return Book</button> <br> <br>
+
+        {% endfor %}
+
+        <h2>Requested Books: </h2>
+        {% for book in requested %}
+        ID: {{book.id}} <br>
+        ISBN: {{book.isbn}} <br>
+        Name: {{book.name}} <br>
+        Authors:
+        {% for book_author in book_authors %}
+            {% if book_author.book_id == book.id: %}
+            {{book_author.author_name}}
+            {% endif %}
+        {% endfor %}
+        <br>
+        [Baaki saman yahan pe bhi] <br><br>
+
+        {% endfor %}
+        {% endif %}
+    </div>
+</body>
+</html>

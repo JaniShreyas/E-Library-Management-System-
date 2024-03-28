@@ -6,9 +6,9 @@
     <title>Document</title>
 </head>
 <body>
-    <form action="/requestBook/{{isbn}}" method="POST">
+    <form action="/requestBook?id={{id}}" method="POST">
         <label for="issue_time">Issue Time</label>
-        <input id="issue_time" type="number" name="issue_time"></input>
+        <input id="issue_time" type="number" name="issue_time" min="0" max="7"></input>
         <input class="submit" type="submit">
     </form>
 </body>
