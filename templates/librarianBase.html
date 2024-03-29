@@ -3,10 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='generalStyle.css') }}">
     <link rel="stylesheet" href="/../static/bootstrap.min.css">
-    <title>Document</title>
+    <title>{% block title %}{% endblock %}</title>
+    {% endblock %}
 </head>
 <body>
+    <nav>
+        <div>
+          <h2>Welcome, {{name}}</h2>
+        </div>
+        <div class="navAnchor">
+            <a href="/librarianDashboard">Dashboard</a>
+            <a href="/librarianDashboard/sections">Sections</a>
+            <a href="/librarianDashboard/viewRequests">View Book Requests</a>
+            <a href="/librarianDashboard/revokeAccess">Revoke Access</a>
+            <a href="/readFeedback">Read Feedback</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+    <div class="flash">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                {{message}} <br>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
     {% block content %}
     {% endblock %}
 </body>

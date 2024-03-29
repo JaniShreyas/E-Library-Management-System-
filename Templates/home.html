@@ -3,67 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <link rel="stylesheet" href="/../static/bootstrap.min.css"> -->
+    
     <style>
         html,
-      body {
-        margin: 0px;
-        font-family: Ubuntu, system-ui, -apple-system, BlinkMacSystemFont,
-          "Segoe UI", Roboto, Oxygen, Cantarell, "Open Sans", "Helvetica Neue",
-          sans-serif;
-      }
-
-      #container {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-
-        justify-content: center;
-        width: 100vw;
-        height: 100vh;
-      }
-
-      /* Responsive layout - makes a one column layout instead of a two-column layout */
-      @media (max-width: 800px) {
-        .flex-item-right,
-        .flex-item-left {
-          flex: 100%;
+        body {
+            margin: 0px;
+            font-family: Ubuntu, system-ui, -apple-system, BlinkMacSystemFont,
+              "Segoe UI", Roboto, Oxygen, Cantarell, "Open Sans", "Helvetica Neue",
+              sans-serif;
         }
-      }
 
-      
+        #container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
 
-      .flex-item-left {
-        flex: 50%;
-      }
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+        }
 
-      .flex-item-right {
-        flex: 50%;
-      }
+        /* Responsive layout - makes a one column layout instead of a two-column layout */
+        @media (max-width: 800px) {
+            .flex-item-right,
+            .flex-item-left {
+              flex: 100%;
+            }
+        }
 
-      #container .loginBox {
-        align-self: center;
-        height: 200px;
-        width: 250px;
-        margin: 100px;
-        padding: 10px;
-        border-style: none;
-      }
+        .flex-item-left {
+            flex: 50%;
+        }
 
-      #container #librarianLogin {
-        background-color: pink;
-      }
+        .flex-item-right {
+            flex: 50%;
+        }
 
-      #container #generalLogin {
-        background-color: lightblue;
-      }
+        #container .loginBox {
+            align-self: center;
+            height: 200px;
+            width: 250px;
+            margin: 100px;
+            padding: 10px;
+            border-style: none;
+        }
+
+        #container #librarianLogin {
+            background-color: grey;
+        }
+
+        #container #generalLogin {
+            background-color: lightblue;
+        }
+
+        .flash{
+            position: fixed;
+            top: 0;
+            background-color: #f08080;
+            border: 1px solid black;
+            border-radius: 20;
+        }
     </style>
     <title>Home Page</title>
 </head>
 <body>
+
+  <div class="flash">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            {{message}} <br>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
     <div id="container">
-            <a href="/librarianLogin"><button class="loginBox flex-item-right" id="librarianLogin">Librarian Login</button></a>
-            <a href="/generalLogin"><button class="loginBox flex-item-left" id="generalLogin">General Login</button></a>
+        <button class="loginBox flex-item-right" id="librarianLogin" onclick="window.location.href='/librarianLogin'">Librarian Login</button>
+        <button class="loginBox flex-item-left" id="generalLogin" onclick="window.location.href='/generalLogin'">General Login</button>
     </div>
 </body>
 </html>

@@ -3,15 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
     <title>Feedback</title>
 </head>
 <body>
+    <div class="flash">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                {{message}} <br>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <div>
         <form class="feedbackForm" action="/feedback?id={{book.id}}" method="post">
             <label for="name">Book Name</label>
             <input id="name" type="text" name="name" value={{book.name}}></input>
             <label for="feedback">Feedback</label>
             <input id="feedback" type="text" name="feedback"></input>
+            <label for="rating">Feedback</label>
+            <input id="rating" type="text" name="rating"></input>
             <input class="submit" type="submit">
         </form>
     </div>

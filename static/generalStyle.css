@@ -27,3 +27,12 @@ html,
         color: black;
         margin: 5px;
     }
+
+    .flash{
+      position: fixed;
+      top: 10;
+      left: 700px;
+      background-color: #f08080;
+      border: 1px solid black;
+      border-radius: 20;
+  }

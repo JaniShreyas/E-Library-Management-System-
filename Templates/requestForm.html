@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
     <title>Document</title>
 </head>
 <body>
+    <div class="flash">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                {{message}} <br>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <form action="/requestBook?id={{id}}" method="POST">
         <label for="issue_time">Issue Time</label>
         <input id="issue_time" type="number" name="issue_time" min="0" max="7"></input>

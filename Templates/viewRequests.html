@@ -1,20 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Requests</title>
-</head>
-<body>
-    <div>
-        <h1>Book Requests</h1>
-        {% for request in requests: %}
-        ISBN: {{request.isbn}} <br>
-        Username: {{request.username}} <br>
-        Issue Time: {{request.issue_time}} <br>
-        <a href="/librarianDashboard/viewRequests/dealWithRequest?id={{request.book_id}}&uid={{request.uid}}&issue_time={{request.issue_time}}&accept=1"><button>Accept</button></a> <br>
-        <a href="/librarianDashboard/viewRequests/dealWithRequest?id={{request.book_id}}&uid={{request.uid}}&accept=0"><button>Reject</button></a> <br>
-        {% endfor %}
-    </div>
-</body>
-</html>
+{% extends "librarianBase.html" %}
+{% block title %}View Requests{% endblock %}
+{% block content %}
+<div>
+    <h1>Book Requests</h1>
+    {% for request in requests: %}
+    ISBN: {{request.isbn}} <br>
+    Username: {{request.username}} <br>
+    Issue Time: {{request.issue_time}} <br>
+    <a href="/librarianDashboard/viewRequests/dealWithRequest?id={{request.book_id}}&uid={{request.uid}}&issue_time={{request.issue_time}}&accept=1"><button>Accept</button></a> <br>
+    <a href="/librarianDashboard/viewRequests/dealWithRequest?id={{request.book_id}}&uid={{request.uid}}&accept=0"><button>Reject</button></a> <br>
+    {% endfor %}
+</div>
+{% endblock %}

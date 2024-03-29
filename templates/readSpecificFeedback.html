@@ -10,7 +10,8 @@
     <div>
         {% for feedback in book_feedbacks %}
         UID: {{feedback.uid}} <br>
-        Feedback: {{feedback.feedback}} <br> <br>
+        Feedback: {{feedback.feedback}} <br> 
+        Rating: {{feedback.rating}} <br>
         {% endfor %}
     </div>
 {% endblock %}

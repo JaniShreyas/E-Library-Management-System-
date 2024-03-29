@@ -1,23 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Librarian Dashboard</title>
-</head>
-<body>
-    <div>
-        <div>
-            <a href="/librarianDashboard/sections">Sections</a>
-            <a href="/librarianDashboard/viewRequests">View Book Requests</a>
-            <a href="/librarianDashboard/revokeAccess">Revoke Access</a>
-            <a href="/readFeedback">Read Feedback</a>
-            <a href="/logout">Logout</a>
-        </div>
-
-        <div>
-        [Some standard stats]
-        </div>
-    </div>
-</body>
-</html>
+{% extends "librarianBase.html" %}
+{% block title %}Librarian Dashboard{% endblock %}
+{% block content %}
+<div>
+    [Some standard stats]
+</div>
+{% endblock %}

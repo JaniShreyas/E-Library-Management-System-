@@ -1,7 +1,20 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
+</head>
 
 <body>
+    <div class="flash">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                {{message}} <br>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <button id="prevButton" disabled="true">Previous</button>
     <button id="nextButton">Next</button>
     

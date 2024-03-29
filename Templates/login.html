@@ -83,6 +83,9 @@
         .flash{
             position: fixed;
             top: 0;
+            background-color: #f08080;
+            border: 1px solid black;
+            border-radius: 20;
         }
 
         .registerButton{
@@ -98,9 +101,9 @@
 
 <body>
     <div class="flash">
-        {% with messages = get_flashed_messages(with_categories=True) %}
+        {% with messages = get_flashed_messages() %}
             {% if messages %}
-                {% for category, message in messages %}
+                {% for message in messages %}
                 {{message}} <br>
                 {% endfor %}
             {% endif %}

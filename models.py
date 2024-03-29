@@ -72,3 +72,4 @@ class BookFeedbackModel(db.Model):
     uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
     feedback = Column(String(500), nullable=False)
+    rating = Column(Integer, nullable=False)

@@ -1,6 +1,6 @@
 from gettext import find
 from re import search
-from flask import Flask, redirect, render_template, request, flash
+from flask import Flask, redirect, render_template, request, flash, url_for
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from sqlalchemy import desc
 from models import (
@@ -15,7 +15,7 @@ from models import (
     BookFeedbackModel,
 )
 import os
-from blueprints.api import api_bp, check_role, login_manager, check_role
+from blueprints.api import UserInfo, api_bp, check_role, login_manager, check_role
 from datetime import datetime, timedelta
 from typing import List
 from werkzeug.utils import secure_filename
@@ -212,7 +212,8 @@ def addUser():
 
     user_login = UserLoginModel.query.filter_by(username = username).first()
     if user_login:
-        return {"message": "Username already exists"}
+        flash("Username already exists")
+        return redirect(request.url)
 
     userLogin = UserLoginModel(username=username, password=password)  # type: ignore
     db.session.add(userLogin)
@@ -236,7 +237,8 @@ def sections():
     sections = SectionModel.query.all()
     user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
     if not user_info:
-        return {"message": "User info does not exist"}
+        flash("User info does not exist")
+        return redirect(url_for("librarianDashboard"))
     role = user_info.role
     return render_template("/sections.html", sections=sections, role=role)
 
@@ -250,7 +252,8 @@ def addSection():
 
     name = request.form.get("name")
     if not name:
-        return {"message": "Name not provided"}
+        flash("Name not provided")
+        return redirect(request.url)
 
     description = request.form.get("description")
 
@@ -260,7 +263,8 @@ def addSection():
 
     section = SectionModel.query.filter_by(name = name).first()
     if section:
-        return {"message": f"Section with name {name} already exists"}
+        flash(f"Section with name {name} already exists")
+        return redirect(request.url)
 
     section = SectionModel(name=name, description=description, date_created=datetime.now(), search_word=search_word)  # type: ignore
 
@@ -279,7 +283,8 @@ def addBook():
         if section_id:
             queried_section = SectionModel.query.filter_by(id = section_id).first()
             if not queried_section:
-                return {"message": "Section does not exist"}
+                flash("Section does not exist")
+                return redirect(url_for("sections"))
         sections = SectionModel.query.all()
         return render_template("addBook.html", section_id=section_id, sections = sections)
 
@@ -294,24 +299,30 @@ def addBook():
     author_names = request.form.get("author_names")
 
     if not book_file:
-        return {"message": "Book file not given"}
+        flash("Book file not given")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
     if not book_file.filename:
-        return {"message": "No file name"}
+        flash("No file name")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
     
     filename = secure_filename(book_file.filename)
 
     if not isFileAllowed(filename):
-        return {"message": "This file type is not allowed"}
+        flash("This file type is not allowed")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
     content_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
     if os.path.exists(content_path):
         book = BookModel.query.filter_by(content = "books/" + filename).first()
         if not book:
-            return {"message": "There is a book pdf which exists but there is no book with the corresponding path.\
-                     Need to manually remove the pdf"}
-        return {"message": f"This book PDF already exists and is referenced by book_id: {book.id} with name: {book.name}"}
+            flash("There is a book pdf which exists but there is no book with the corresponding path.\
+                     Need to manually remove the pdf")
+            return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
+        
+        flash(f"This book PDF already exists and is referenced by book_id: {book.id} with name: {book.name}")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
     
     content = book_file.filename
     print(content)
@@ -320,17 +331,21 @@ def addBook():
         if page_count:
             page_count = int(page_count)
             if page_count < 1:
-                return {"message": "Page count must be a positive integer"}
+                flash("Page count must be a positive integer")
+                return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
         
         if volume:
             volume = int(volume)
             if volume < 1:
-                return {"message": "Page count must be a positive integer"}
+                flash("Page count must be a positive integer")
+                return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
             
     except ValueError:
-        return {"message": "Page count and Volume should be an integer"}
+        flash("Page count and Volume should be an integer")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
     except Exception as e:
-        return {"message": str(e)}
+        flash(str(e))
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
     if section_id != 'None':
         section = SectionModel.query.filter_by(id = section_id).first()
@@ -340,24 +355,30 @@ def addBook():
         
 
     if not section:
-        return {"message": "Section does not exist"}, 404
+        flash("Section does not exist")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
     if not author_names:
-        return {"message": "Author names not given"}, 404
+        flash("Author names not given")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
     author_names_list: List[str] = author_names.split(",")
 
     if not book_name:
-        return {"message": "Book name not provided"}
+        flash("Book name not provided")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
     if not isbn:
-        return {"message": "ISBN not provided"}
+        flash("ISBN not provided")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
     if not publisher:
-        return {"message": "Publisher not provided"}
+        flash("Publisher not provided")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
     book = BookModel.query.filter_by(isbn=isbn).first()
 
     if book:
-        return {"message": "Book already exists"}, 400
+        flash("Book already exists")
+        return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
     
     search_word: str = raw(isbn) + raw(book_name) + raw(publisher) + raw(section.name) + raw(str(volume)) + raw(str(page_count))
 
@@ -386,13 +407,15 @@ def viewBooks(section_id):
     section = SectionModel.query.filter_by(id = section_id).first()
 
     if not section:
-        return {"message": "Section not found"}
+        flash("Section not found")
+        return redirect(url_for("sections"))
 
     books = BookModel.query.filter_by(section_id=section.id).all()
 
     user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
     if not user_info:
-        return {"message": "User info does not exist"}
+        flash("User info does not exist")
+        return redirect("/")
     
     print(books)
 
@@ -402,7 +425,13 @@ def viewBooks(section_id):
 @login_required
 @check_role(role = "General")
 def generalDashboard():
-    return render_template("generalDashboard.html")
+
+    user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
+    if not user_info:
+        flash("User info does not exist")
+        return redirect("/")
+    
+    return render_template("generalDashboard.html", name = user_info.first_name)
 
 @app.route("/generalDashboard/requestBooks/", methods=["GET"])
 @check_role(role = "General")
@@ -422,47 +451,60 @@ def requestBooks():
 
 @app.route("/requestBook/", methods = ["GET", "POST"])
 @login_required
+@check_role(role = "General")
 def requestBook():
 
     if request.method == "GET": 
         id = request.args.get("id")
 
+        book = BookModel.query.filter_by(id = id).first()
+        if not book:
+            flash("Book does not exist")
+            return redirect(url_for("requestBooks"))
+
         request_book = BookRequestsModel.query.filter_by(book_id = id, uid = current_user.id).first()
-        if request_book: 
-            return {"message": "Book request already exists"}
+        if request_book:
+            flash("Book request already exists")
+            return redirect("/generalDashboard/requestBooks/")
         
         issue_book = BookIssueModel.query.filter_by(book_id = id, uid = current_user.id).first()
         if issue_book:
-            return {"message": "Book has already been issued"}
+            flash("Book has already been issued")
+            return redirect("/generalDashboard/requestBooks/")
 
         book_request = BookRequestsModel.query.filter_by(uid = current_user.id).all()
         book_issue = BookIssueModel.query.filter_by(uid = current_user.id).all()
         if (len(book_request) + len(book_issue)) >= 5:
-            return {"message": "You can only request/issue 5 books at once"}
+            flash("You can only request/issue 5 books at once")
+            return redirect("/generalDashboard/requestBooks/")
 
         return render_template("requestForm.html", id = id)
     
     id = request.args.get("id")
 
     try:
-        issue_time = int(request.form.get("issue_time", 8))
+        issue_time = int(request.form.get("issue_time", 7))
     except Exception as e:
-        return {"message": str(e)}
+        flash(str(e))
+        return redirect(f"/requestBooks?id={id}")
 
     if not (1 <= issue_time <= max_issue_time):
-        return {"message": "Issue time should be in range (1,7)"}
+        flash("Issue time should be in range (1,7)")
     
     book = BookModel.query.filter_by(id = id).first()
     if not book:
-        return {"message": "Book does not exist"}, 404
+        flash("Book does not exist")
+        return redirect(url_for("requestBooks"))
     
     book_request = BookRequestsModel.query.filter_by(book_id = book.id, uid = current_user.id).first()
     if book_request:
-        return {"message": "Book request already exists"}
+        flash("Book request already exists")
+        return redirect(url_for("requestBooks"))
 
     book_issue = BookIssueModel.query.filter_by(book_id = book.id, uid = current_user.id).first()
     if book_issue:
-        return {"message": "Book has already been issued"}
+        flash("Book has already been issued")
+        return redirect(url_for("requestBooks"))
 
     book_request = BookRequestsModel(book_id = book.id, uid = current_user.id, date_of_request=datetime.now(), issue_time=issue_time)  # type: ignore
     db.session.add(book_request)
@@ -509,18 +551,21 @@ def dealWithRequest():
     accept = request.args.get("accept")
 
     if accept not in ('0','1'):
-        return {"message": "accept should be in (0,1)"}, 400
+        flash("accept should be in (0,1)")
+        return redirect(url_for("viewRequests"))
     
     book = BookModel.query.filter_by(id = id).first()
     if not book:
-        return {"message": "Book does not exist"}, 404
+        flash("Book does not exist")
+        return redirect(url_for("viewRequests"))
     
     if accept == '1':
         # Accept book
 
         book_issue = BookIssueModel.query.filter_by(book_id=book.id, uid = uid).first()
         if book_issue:
-            return {"message": "Book Issue already exists"}, 400
+            flash("Book Issue already exists")
+            return redirect(url_for("viewRequests"))
 
         book_issue = BookIssueModel(book_id=book.id, uid = uid, date_of_issue = datetime.now(), date_of_return = datetime.now() + timedelta(int(issue_time)))  # type: ignore
 
@@ -539,16 +584,19 @@ def dealWithRequest():
 
 @app.route("/returnBook/", methods=["GET"])
 @login_required
+@check_role(role="General")
 def returnBook():
     id = request.args.get("id")
 
     book = BookModel.query.filter_by(id = id).first()
     if not book:
-        return {"message": "Book does not exist"}, 404
+        flash("Book does not exist")
+        return redirect(url_for("generalBooks"))
 
     book_issue = BookIssueModel.query.filter_by(uid = current_user.id, book_id=book.id)
     if not book_issue:
-        return {"message": "Book issue does not exist"}
+        flash("Book issue does not exist")
+        return redirect(url_for("generalBooks"))
     
     BookIssueModel.query.filter_by(uid = current_user.id, book_id=book.id).delete()
     db.session.commit()
@@ -557,24 +605,28 @@ def returnBook():
 
 @app.route("/feedback/", methods = ["GET", "POST"])
 @login_required
+@check_role(role="General")
 def feedback():
     if request.method == "GET":
         id = request.args.get("id")
         book = BookModel.query.filter_by(id = id).first()
         if not book:
-            return {"message": "Book does not exist"}
+            flash("Book does not exist")
+            return redirect(url_for("generalDashboard"))
         return render_template("feedback.html", book = book)        
 
     id = request.args.get("id")
     feedback = request.form.get("feedback")
+    rating = request.form.get("rating")
 
     book = BookModel.query.filter_by(id = id).first()
     if not book:
-        return {"message": "Book does not exist"}, 404
+        flash("Book does not exist")
+        return redirect(url_for("generalDashboard"))
     
     BookFeedbackModel.query.filter_by(uid = current_user.id, book_id = book.id).delete()
 
-    book_feedback = BookFeedbackModel(uid = current_user.id, book_id=book.id, feedback = feedback)  # type: ignore
+    book_feedback = BookFeedbackModel(uid = current_user.id, book_id=book.id, feedback = feedback, rating = rating)  # type: ignore
     db.session.add(book_feedback)
     db.session.commit()
 
@@ -587,7 +639,9 @@ def generalViewSections():
     sections = SectionModel.query.all()
     user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
     if not user_info:
-        return {"message": "User info does not exist"}
+        flash("User info does not exist")
+        return redirect("/")
+    
     role = user_info.role
     return render_template("sections.html", sections=sections, role = role)
 
@@ -611,15 +665,18 @@ def revokeAccess():
 
     user_login = UserLoginModel.query.filter_by(id = uid).first()
     if not user_login:
-        return {"message": "User Login not found"}
+        flash("User Login not found")
+        return redirect("/")
 
     book = BookModel.query.filter_by(id = id).first()
     if not book:
-        return {"message": "Book does not exist"}, 404
+        flash("Book does not exist")
+        return redirect(url_for("librarianDashboarRevokeAccess"))
 
     book_issue = BookIssueModel.query.filter_by(book_id=book.id, uid = user_login.id).first()
     if not book_issue:
-        return {"message": "Book issue does not exist"}
+        flash("Book issue does not exist")
+        return redirect(url_for("librarianDashboarRevokeAccess"))
     
     BookIssueModel.query.filter_by(book_id=book.id, uid = user_login.id).delete()
     db.session.commit()
@@ -632,6 +689,11 @@ def revokeAccess():
 def editSection():
     id = request.args.get("id")
     section = SectionModel.query.filter_by(id = id).first()
+    
+    if not section:
+        flash("Section not found")
+        return redirect(url_for("sections"))
+
     if request.method == "GET":
         return render_template("editSection.html", section = section)
     
@@ -642,11 +704,13 @@ def editSection():
 
     this_section = SectionModel.query.filter_by(id = id).first()
     if not this_section:
-        return {"message": "Section not found"}
+        flash("Section not found")
+        return redirect(url_for("sections"))
 
     section = SectionModel.query.filter_by(name = name).first()
     if section and not section.id == this_section.id:
-        return {"message": "Section name already exists"}
+        flash("Section name already exists")
+        return redirect(f"/librarianDashboard/editSection?id={id}")
 
     if name:
         this_section.name = name
@@ -667,15 +731,18 @@ def editBook():
         id = request.args.get("id")
         book = BookModel.query.filter_by(id = id).first()
         if not book:
-            return {"message": "Book not found"}
+            flash("Book not found")
+            return redirect(url_for("sections"))
 
         book_author = BookAuthorModel.query.filter_by(book_id = id).all()
         if not book_author:
-            return {"message": "Book Author not found"}
+            flash("Book Author not found")
+            return redirect(f"/librarianDashboard/sections/{book.section_id}")
         
         section = SectionModel.query.filter_by(id = book.section_id).first()
         if not section: 
-            return {"message": "Section not found"}
+            flash("Section not found")
+            return redirect(f"/librarianDashboard/sections/{book.section_id}")
         
         sections = SectionModel.query.all()
 
@@ -699,34 +766,42 @@ def editBook():
             filename = secure_filename(book_file.filename)
 
             if not isFileAllowed(filename):
-                return {"message": "This file type is not allowed"}
+                flash("This file type is not allowed")
+                return redirect(f"/librarianDashboard/editBook?id={book_id}")
 
             content_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
             if os.path.exists(content_path):
                 book = BookModel.query.filter_by(content = "books/" + filename).first()
                 if not book:
-                    return {"message": "There is a book pdf which exists but there is no book with the corresponding path.\
-                            Need to manually remove the pdf"}
-                return {"message": f"This book PDF already exists and is referenced by book_id: {book.id} with name: {book.name}"}
+                    flash("There is a book pdf which exists but there is no book with the corresponding path.\
+                            Need to manually remove the pdf")
+                    return redirect(f"/librarianDashboard/editBook?id={book_id}")
+                
+                flash(f"This book PDF already exists and is referenced by book_id: {book.id} with name: {book.name}")
+                return redirect(f"/librarianDashboard/editBook?id={book_id}")
     
     try:
         if page_count:
             page_count = int(page_count)
             if page_count < 1:
-                return {"message": "Page count must be a positive integer"}
+                flash("Page count must be a positive integer")
+                return redirect(f"/librarianDashboard/editBook?id={book_id}")
             
         if volume:
             volume = int(volume)
             if volume < 1:
-                return {"message": "Page count must be a positive integer"}
+                flash("Page count must be a positive integer")
+                return redirect(f"/librarianDashboard/editBook?id={book_id}")
             
     except:
-        return {"message": "Page count and Volume should be an integer"}
+        flash("Page count and Volume should be an integer")
+        return redirect(f"/librarianDashboard/editBook?id={book_id}")
 
     book = BookModel.query.filter_by(id = book_id).first()
     if not book:
-        return {"message": "Book does not exist"}
+        flash("Book does not exist")
+        return redirect(f"/librarianDashboard/editBook?id={book_id}")
 
     if isbn:
         book.isbn = isbn
@@ -734,7 +809,8 @@ def editBook():
     if section_name:
         section = SectionModel.query.filter_by(name = section_name).first()
         if not section:
-            return {"message": "Section does not exist"}
+            flash("Section does not exist")
+            return redirect(f"/librarianDashboard/editBook?id={book_id}")
         book.section_id = section.id
 
     if name:
@@ -781,14 +857,17 @@ def editBook():
 def removeSection():
     id = request.args.get("id")
     if id == '0':
-        return {"message": "Unassigned cannot be removed"}
+        flash("Unassigned cannot be removed")
+        return redirect(url_for("sections"))
 
     if not id:
-        return {"message": "ID not provided"}
+        flash("ID not provided")
+        return redirect(url_for("sections"))
     
     section = SectionModel.query.filter_by(id = id).first()
     if not section:
-        return {"message": "Section not found"}
+        flash("Section not found")
+        return redirect(url_for("sections"))
 
     books = BookModel.query.filter_by(section_id = id).update({"section_id": 0})
     SectionModel.query.filter_by(id = id).delete()
@@ -804,7 +883,8 @@ def removeBook():
     id = request.args.get("id")
     book = BookModel.query.filter_by(id = id).first()
     if not book:
-        return {"message": "Book does not exist"}
+        flash("Book does not exist")
+        return redirect(url_for("sections"))
     
     section_id = book.section_id
 
@@ -830,9 +910,16 @@ def removeBook():
 @check_role(role = "Librarian")
 def viewBookStatus():
     id = request.args.get("id")
+
+    book = BookModel.query.filter_by(id = id).first()
+    if not book:
+        flash("Book does not exist")
+        return redirect(url_for("librarianDashboard"))
+    
     book_issues = BookIssueModel.query.filter_by(book_id = id).all()
     if not book_issues:
-        return {"message": "No book issues exist"}
+        flash("No book issues exist")
+        return redirect(f"/librarianDashboard/sections/{book.section_id}")
     
     book_and_users = BookIssueModel.query.filter_by(book_id = id)\
         .join(UserInfoModel, onclause = BookIssueModel.uid == UserInfoModel.uid)\
@@ -840,7 +927,8 @@ def viewBookStatus():
                        BookIssueModel.date_of_return, UserInfoModel.first_name, UserInfoModel.last_name,
                        UserInfoModel.role).all()  # type: ignore
     if not book_and_users:
-        return {"message": "User does not exist"}
+        flash("User does not exist")
+        return redirect(f"/librarianDashboard/sections/{book.section_id}")
     
     return render_template("viewBookStatus.html", id = id, book_and_users = book_and_users)
 
@@ -850,7 +938,8 @@ def readBook():
     id = request.args.get("id")
     book = BookModel.query.filter_by(id = id).first()
     if not book:
-        return {"message": "Book does not exist"}
+        flash("Book does not exist")
+        return redirect(url_for("sections"))
 
     return render_template("/readBook.html", book = book)
 
@@ -860,16 +949,25 @@ def readFeedback():
     id = request.args.get("id")
 
     user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
-    role = None
-    if user_info:
-        role = user_info.role
+    if not user_info:
+        flash("User info not found")
+        return redirect("/")
+
+    role = user_info.role
+
+    if id:
+        book = BookModel.query.filter_by(id = id).first()
+        if not book:
+            flash("Book does not exist")
+            return redirect(f"/{user_info.role.lower()}Dashboard")
 
     if not id:
         book_feedbacks = BookFeedbackModel.query\
             .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)\
-            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookFeedbackModel.uid, BookFeedbackModel.feedback).all()
+            .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookFeedbackModel.uid, BookFeedbackModel.feedback, BookFeedbackModel.rating).all()
         if not book_feedbacks:
-            return {"message": "Book Feedback does not exist"}
+            flash("Book Feedback does not exist")
+            return redirect(f"/{user_info.role.lower()}Dashboard")
     
         return render_template("readFeedback.html", book_feedbacks = book_feedbacks, role = role)
     else:
@@ -878,7 +976,8 @@ def readFeedback():
             .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookFeedbackModel.uid, BookFeedbackModel.feedback).all()
         
         if not book_feedbacks:
-            return {"message": "Book Feedback does not exist"}
+            flash("Book Feedback does not exist")
+            return redirect(f"/librarianDashboard/sections/{book.section_id}")
 
         return render_template("readSpecificFeedback.html", book_feedbacks = book_feedbacks, role = role)
 
@@ -903,7 +1002,8 @@ def searchViewBooks(section_id):
 
     user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
     if not user_info:
-        return {"message": "User Info not found"}
+        flash("User Info not found")
+        return redirect("/")
 
     return render_template("search_viewBooks.html", books = books, book_authors = book_authors, role = user_info.role)
 
@@ -939,8 +1039,10 @@ def searchGeneralBooks():
         for issue in book_issues:
             if book.id == issue.book_id:
                 issued.append(book)
+
+    user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
     
-    return render_template("search_generalBooks.html", requested = requested, issued = issued, book_authors = book_authors)
+    return render_template("search_generalBooks.html", requested = requested, issued = issued, book_authors = book_authors, name = current_user.first_name)
 
 if __name__ == "__main__":
     app.run(debug=True)

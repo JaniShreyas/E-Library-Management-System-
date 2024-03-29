@@ -1,22 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revoke Access</title>
-</head>
-<body>
-    <div>
-        {% if not book_issues %}
-        <h3>No Book Issues yet!</h3>
-        {% endif %}
+{% extends "librarianBase.html" %}
+{% block title %}Revoke Access{% endblock %}
+{% block content %}
+<div>
+    {% if not book_issues %}
+    <h3>No Book Issues yet!</h3>
+    {% endif %}
 
-        {% for book_issue in book_issues %}
-        Book ID: {{book_issue.book_id}} <br>
-        Book Name: {{book_issue.name}} <br>
-        UID: {{book_issue.uid}} <br>
-        <a href="/revokeAccess?id={{book_issue.book_id}}&uid={{book_issue.uid}}"><button>Revoke Access</button></a> <br> <br>
-        {% endfor %}
-    </div>
-</body>
-</html>
+    {% for book_issue in book_issues %}
+    Book ID: {{book_issue.book_id}} <br>
+    Book Name: {{book_issue.name}} <br>
+    UID: {{book_issue.uid}} <br>
+    <a href="/revokeAccess?id={{book_issue.book_id}}&uid={{book_issue.uid}}"><button>Revoke Access</button></a> <br> <br>
+    {% endfor %}
+</div>
+{% endblock %}
