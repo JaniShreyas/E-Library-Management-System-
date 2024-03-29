@@ -333,15 +333,9 @@ def addBook():
             if page_count < 1:
                 flash("Page count must be a positive integer")
                 return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
-        
-        if volume:
-            volume = int(volume)
-            if volume < 1:
-                flash("Page count must be a positive integer")
-                return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
             
     except ValueError:
-        flash("Page count and Volume should be an integer")
+        flash("Page count should be an integer")
         return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
     except Exception as e:
         flash(str(e))
@@ -486,10 +480,11 @@ def requestBook():
         issue_time = int(request.form.get("issue_time", 7))
     except Exception as e:
         flash(str(e))
-        return redirect(f"/requestBooks?id={id}")
+        return redirect(f"/requestBook?id={id}")
 
     if not (1 <= issue_time <= max_issue_time):
         flash("Issue time should be in range (1,7)")
+        return redirect(f"/requestBook?id={id}")
     
     book = BookModel.query.filter_by(id = id).first()
     if not book:
@@ -788,14 +783,8 @@ def editBook():
                 flash("Page count must be a positive integer")
                 return redirect(f"/librarianDashboard/editBook?id={book_id}")
             
-        if volume:
-            volume = int(volume)
-            if volume < 1:
-                flash("Page count must be a positive integer")
-                return redirect(f"/librarianDashboard/editBook?id={book_id}")
-            
     except:
-        flash("Page count and Volume should be an integer")
+        flash("Page count should be an integer")
         return redirect(f"/librarianDashboard/editBook?id={book_id}")
 
     book = BookModel.query.filter_by(id = book_id).first()
@@ -965,9 +954,6 @@ def readFeedback():
         book_feedbacks = BookFeedbackModel.query\
             .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)\
             .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookFeedbackModel.uid, BookFeedbackModel.feedback, BookFeedbackModel.rating).all()
-        if not book_feedbacks:
-            flash("Book Feedback does not exist")
-            return redirect(f"/{user_info.role.lower()}Dashboard")
     
         return render_template("readFeedback.html", book_feedbacks = book_feedbacks, role = role)
     else:
@@ -975,10 +961,6 @@ def readFeedback():
             .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)\
             .with_entities(BookModel.id, BookModel.isbn, BookModel.name, BookFeedbackModel.uid, BookFeedbackModel.feedback).all()
         
-        if not book_feedbacks:
-            flash("Book Feedback does not exist")
-            return redirect(f"/librarianDashboard/sections/{book.section_id}")
-
         return render_template("readSpecificFeedback.html", book_feedbacks = book_feedbacks, role = role)
 
 @app.route("/sections/search/", methods=["GET"])

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
 </head>
@@ -7,17 +8,20 @@
 <body>
     <div class="flash">
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                {{message}} <br>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for message in messages %}
+        {{message}} <br>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
     </div>
 
     <button id="prevButton" disabled="true">Previous</button>
     <button id="nextButton">Next</button>
-    
+    <p id="pageNumText"></p>
+    <p id="totalPages"></p>
+    <input type="number" id="pageNum" width="1px" onchange="updateAndRender()">
+
     <div>
         <canvas id="pdf-canvas"></canvas>
     </div>
@@ -42,9 +46,11 @@
             // Fetch the first page
             pdf = loadedPdf;
             renderPage(pageNum);
+            document.getElementById('totalPages').textContent = ' / ' + pdf.numPages;
             document.getElementById('prevButton').onclick = previousPage;
             document.getElementById('nextButton').onclick = nextPage;
-
+            document.getElementById("pageNum").addEventListener("input", updateAndRender);
+            document.getElementById("pageNumText").textContent = pageNum;
         }, function (reason) {
             // PDF loading error
             console.error(reason);
@@ -79,20 +85,33 @@
 
         }
 
+        function updateButtons() {
+            // if cannot go to next page, disable
+                document.getElementById('nextButton').disabled = pageNum >= pdf.numPages;
+                document.getElementById('prevButton').disabled = pageNum <= 1;
+        }
+
+        function updateAndRender() {
+
+            var inputValue = parseInt(document.getElementById("pageNum").value);
+            if (!isNaN(inputValue) && inputValue >= 0 && inputValue <= pdf.numPages) {
+                // Call function only if the input is a valid number between 0 and length
+                pageNum = inputValue;
+                document.getElementById("pageNumText").textContent = pageNum;
+                updateButtons();
+                renderPage(inputValue);
+            }
+        }
+
         function nextPage() {
             if (pdf != null) {
                 if (pageNum >= pdf.numPages) {
                     return;
                 }
                 pageNum++;
-                // if cannot go to next page, disable
-                if (pageNum >= pdf.numPages) {
-                    document.getElementById('nextButton').disabled = true;
-                }
-                if (pageNum > 1) {
-                    document.getElementById('prevButton').disabled = false;
-                }
-                renderPage(pageNum);
+                updateButtons();
+                document.getElementById("pageNum").value = pageNum;
+                updateAndRender();
             }
         }
 
@@ -102,17 +121,22 @@
                     return;
                 }
                 pageNum--;
-                // if cannot go to previous page, disable
-                if (pageNum <= 1) {
-                    document.getElementById('prevButton').disabled = true;
-                }
-                if (pageNum < pdf.numPages) {
-                    document.getElementById('nextButton').disabled = false;
-                }
-                renderPage(pageNum);
+                updateButtons();
+                document.getElementById("pageNum").value = pageNum;
+                updateAndRender();
             }
         }
 
+        function getInput(event) {
+            console.log(event)
+            if (event.keyCode == "37") {
+                previousPage();
+            }
+            if (event.keyCode == "39") {
+                nextPage();
+            }
+        }
+        document.addEventListener("keydown", getInput)
 
     </script>
 

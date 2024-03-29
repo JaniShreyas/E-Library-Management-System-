@@ -6,6 +6,9 @@
 {% block title %} Read Feedback {% endblock %}
 {% block content %}
 <div>
+    {% if not feedbacks %}
+    <h3>No feedbacks exist</h3>
+    {% endif %}
     {% for feedback in book_feedbacks %}
     ISBN: {{feedback.isbn}} <br>
     Book Name: {{feedback.name}} <br>
