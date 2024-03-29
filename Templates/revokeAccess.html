@@ -15,7 +15,7 @@
         Book ID: {{book_issue.book_id}} <br>
         Book Name: {{book_issue.name}} <br>
         username: {{book_issue.username}} <br>
-        <button onclick="window.location.href='/revokeAccess?id={{book_issue.book_id}}&username={{book_issue.username}}'">Revoke Access</button> <br> <br>
+        <a href="/revokeAccess?id={{book_issue.book_id}}&username={{book_issue.username}}"><button>Revoke Access</button></a> <br> <br>
         {% endfor %}
     </div>
 </body>

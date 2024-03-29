@@ -136,24 +136,24 @@ def librarianLogin():
     userLogin = UserLoginModel.query.filter_by(username=username).first()
     if not userLogin:
         flash(f"User with username {username} does not exist")
-        return redirect("/librarianLogin")
+        return redirect(request.url)
 
     userInfo = UserInfoModel.query.filter_by(uid=userLogin.id).first()
     if userLogin and not userInfo:
         flash(f"There is no info regarding user {username}")
-        return redirect("/librarianLogin")
+        return redirect(request.url)
 
     if userLogin and userLogin.password == password:
         if userInfo and userInfo.role != role:
             flash(f"{username} is not a {role}")
-            return redirect("/librarianLogin")
+            return redirect(request.url)
         else:
             login_user(userLogin)
     else:
         flash(f"Incorrect Password")
-        return redirect("/librarianLogin")
+        return redirect(request.url)
 
-    return redirect("/librarianDashboard")
+    return redirect(request.url)
 
 
 @app.route("/generalLogin/", methods=["GET", "POST"])
@@ -303,9 +303,11 @@ def addBook():
     content_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
     if os.path.exists(content_path):
-        return {"message": "This book PDF already exists"}
-
-    book_file.save(content_path)
+        book = BookModel.query.filter_by(content = "books/" + filename).first()
+        if not book:
+            return {"message": "There is a book pdf which exists but there is no book with the corresponding path.\
+                     Need to manually remove the pdf"}
+        return {"message": f"This book PDF already exists and is referenced by book_id: {book.id} with name: {book.name}"}
     
     content = book_file.filename
     print(content)
@@ -365,8 +367,9 @@ def addBook():
         author = BookAuthorModel(book_id=book.id, author_name=author_name, search_word = author_search_word)  # type: ignore
         db.session.add(author)
     db.session.commit()
+    book_file.save(content_path)
 
-    return redirect(f"/librarianDashboard/sections/{section.id}/viewBooks")
+    return redirect(f"/librarianDashboard/sections/{section.id}")
 
 
 # Don't restrict by role since used by both users
@@ -691,10 +694,13 @@ def editBook():
                 return {"message": "This file type is not allowed"}
 
             content_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            print(filename, content_path)
 
             if os.path.exists(content_path):
-                return {"message": "This book PDF already exists"}
+                book = BookModel.query.filter_by(content = "books/" + filename).first()
+                if not book:
+                    return {"message": "There is a book pdf which exists but there is no book with the corresponding path.\
+                            Need to manually remove the pdf"}
+                return {"message": f"This book PDF already exists and is referenced by book_id: {book.id} with name: {book.name}"}
     
     try:
         if page_count:
@@ -759,7 +765,7 @@ def editBook():
 
     db.session.commit()
 
-    return redirect(f"/librarianDashboard/sections/{section.id}/viewBooks")
+    return redirect(f"/librarianDashboard/sections/{section.id}")
 
 @app.route("/librarianDashboard/removeSection/", methods = ["GET"])
 @login_required

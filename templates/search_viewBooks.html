@@ -36,10 +36,10 @@
             
             
             {% if (role == "Librarian") %}
-            <button onclick="window.location.href='/readBook?id={{book.id}}'">Read Book</button> 
-            <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> 
-            <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> 
-            <button onclick="window.location.href='/librarianDashboard/viewBookStatus?id={{book.id}}'">View Status</button> 
+            <a href="/readBook?id={{book.id}}"><button>Read Book</button></a> 
+            <a href="/editBook?id={{book.id}}"><button>Edit Book</button></a> 
+            <a href="/removeBook?id={{book.id}}"><button>Remove Book</button></a> 
+            <a href="/librarianDashboard/viewBookStatus?id={{book.id}}"><button>View Status</button></a> 
             {% endif %}
             {% if role == "General" %}
             <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a>

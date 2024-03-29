@@ -36,10 +36,10 @@
         </div>
         <br>
         {% if role == "Librarian": %}
-        <button onclick="window.location.href='/librarianDashboard/editSection?id={{section.id}}'">Edit Section</button>
+        <a href="/librarianDashboard/editSection?id={{section.id}}"><button>Edit Section</button></a>
         <button onclick = "window.location.href='/librarianDashboard/addBook?section_id={{section.id}}'">Add Book</button>
         {% if section.id != 0 %}
-        <button onclick="window.location.href='/librarianDashboard/removeSection?id={{section.id}}'">Remove Section</button>
+        <a href="/librarianDashboard/removeSection?id={{section.id}}"><button>Remove Section</button></a>
         {% endif %}
         {% endif %}
         <a href="/librarianDashboard/sections/{{section.id}}"><button>View Books</button></a>
@@ -49,7 +49,7 @@
     <div>
         {% if role == "Librarian" %}
         <br>
-        <button onclick="window.location.href='/librarianDashboard/addSection'">Add Section</button>
+        <a href="/librarianDashboard/addSection"><button>Add Section</button></a>
         {% endif %}
     </div>
 </body>

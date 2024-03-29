@@ -26,7 +26,7 @@
             {% for issued_book_id in issued_book_ids if issued_book_id == book.id %}
             [Book already requested or issued] <br>
             {% else %}
-            <button onclick="window.location.href='/requestBook?id={{book.id}}'">Request Book</button> <br>
+            <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a> <br>
             {% endfor %}
             <br>
         {% endfor %}

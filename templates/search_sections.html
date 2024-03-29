@@ -29,10 +29,10 @@
         </div>
         <br>
         {% if role == "Librarian": %}
-        <button onclick="window.location.href='/editSection?id={{section.id}}'">Edit Section</button>
+        <a href="/editSection?id={{section.id}}"><button>Edit Section</button></a>
         <button onclick = "window.location.href='/addBook?section_id={{section.id}}'">Add Book</button>
         {% if section.id != 0 %}
-        <button onclick="window.location.href='/removeSection?id={{section.id}}'">Remove Section</button>
+        <a href="/removeSection?id={{section.id}}"><button>Remove Section</button></a>
         {% endif %}
         {% endif %}
         <button onclick = "window.location.href='/viewBooks?section_id={{section.id}}'">View Books</button> <br>
