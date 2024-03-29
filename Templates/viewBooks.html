@@ -43,8 +43,8 @@
             
             {% if (role == "Librarian") %}
             <button onclick="window.location.href='/readBook?id={{book.id}}'">Read Book</button> 
-            <button onclick="window.location.href='/editBook?id={{book.id}}'">Edit Book</button> 
-            <button onclick="window.location.href='/removeBook?id={{book.id}}'">Remove Book</button> 
+            <button onclick="window.location.href='/librarianDashboard/editBook?id={{book.id}}'">Edit Book</button> 
+            <button onclick="window.location.href='/librarianDashboard/removeBook?id={{book.id}}'">Remove Book</button> 
             <button onclick="window.location.href='/librarianDashboard/viewBookStatus?id={{book.id}}'">View Status</button> 
             {% endif %}
             {% if role == "General" %}
@@ -55,7 +55,7 @@
         {% endfor %}
         <br>
         {% if role == "Librarian": %}
-        <a href="/addBook?section_id={{section_id}}"><button>Add Book</button></a>
+        <a href="/librarianDashboard/addBook?section_id={{section_id}}"><button>Add Book</button></a>
         {% endif %}
     </div>
 </body>

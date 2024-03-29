@@ -11,7 +11,7 @@
     </div>
 
     <div>
-        <form class="editBookForm" action="/editBook?id={{book.id}}" method="post">
+        <form class="editBookForm" action="/librarianDashboard/editBook?id={{book.id}}" method="post" enctype="multipart/form-data">
             <label for="isbn">ISBN</label>
             <input id="isbn" type="text" name="isbn" value="{{book.isbn}}"></input>
             <label for="name">Name</label>
@@ -21,7 +21,7 @@
             <label for="page_count">Page Count</label>
             <input id="page_count" type="text" name="page_count" value="{{book.page_count}}" min="0"></input>
             <label for="content_path">Content Path</label>
-            <input id="content_path" type="text" name="content_path" value="{{book.content}}"></input>
+            <input type="file" name="book_file">
             <label for="publisher">Publisher</label>
             <input id="publisher" type="text" name="publisher" value="{{book.publisher}}"></input>
             <label for="volume">Publisher</label>

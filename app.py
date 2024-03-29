@@ -18,6 +18,7 @@ import os
 from blueprints.api import api_bp, check_role, login_manager, check_role
 from datetime import datetime, timedelta
 from typing import List
+from werkzeug.utils import secure_filename
 
 currentDirectory = os.path.dirname(os.path.realpath(__file__))
 
@@ -32,12 +33,21 @@ app.app_context().push()
 login_manager.init_app(app)
 app.register_blueprint(api_bp)
 
+UPLOAD_FOLDER: str = "/static/books"
+cwd = os.getcwd()
+app.config["UPLOAD_FOLDER"] = os.getcwd() + UPLOAD_FOLDER
+
+allowed_extensions = {"pdf"}
+
 login_manager = LoginManager()
 
 max_issue_time = 7
 
 def raw(input: str) -> str:
     return input.lower().replace(' ', "")
+
+def isFileAllowed(filename: str):
+    return ('.' in filename) and (filename.split('.')[-1].lower() in allowed_extensions)
 
 def findBooks(search_word: str, filter_section = None):
     modified_search_word = '%'+raw(search_word)+'%'
@@ -114,7 +124,7 @@ def home():
 @app.route("/librarianLogin/", methods=["GET", "POST"])
 def librarianLogin():
     if request.method == "GET":
-        if current_user:
+        if current_user.is_authenticated:
             return redirect("/librarianDashboard")
 
         return render_template("login.html", role="librarian")
@@ -149,7 +159,7 @@ def librarianLogin():
 @app.route("/generalLogin/", methods=["GET", "POST"])
 def generalLogin():
     if request.method == "GET":
-        if current_user:
+        if current_user.is_authenticated:
             return redirect("/generalDashboard")
         return render_template("login.html", role="general")
 
@@ -210,6 +220,8 @@ def addUser():
     return redirect("/generalDashboard")
 
 @app.route("/librarianDashboard/", methods = ["GET"])
+@login_required
+@check_role(role = "Librarian")
 def librarianDashboard():
     return render_template("librarianDashboard.html")
 
@@ -225,7 +237,7 @@ def sections():
     return render_template("/sections.html", sections=sections, role=role)
 
 
-@app.route("/addSection/", methods=["GET", "POST"])
+@app.route("/librarianDashboard/addSection/", methods=["GET", "POST"])
 @login_required
 @check_role(role="Librarian")
 def addSection():
@@ -254,7 +266,7 @@ def addSection():
     return redirect("/librarianDashboard/sections")
 
 
-@app.route("/addBook/", methods=["GET", "POST"])
+@app.route("/librarianDashboard/addBook", methods=["GET", "POST"])
 @login_required
 @check_role(role="Librarian")
 def addBook():
@@ -272,18 +284,45 @@ def addBook():
     isbn = request.form.get("isbn")
     book_name = request.form.get("book_name")
     page_count = request.form.get("page_count")
-    content_path = request.form.get("content")
+    book_file = request.files["book_file"]
     publisher = request.form.get("publisher")
     volume = request.form.get("volume")
     author_names = request.form.get("author_names")
+
+    if not book_file:
+        return {"message": "Book file not given"}
+
+    if not book_file.filename:
+        return {"message": "No file name"}
+    
+    filename = secure_filename(book_file.filename)
+
+    if not isFileAllowed(filename):
+        return {"message": "This file type is not allowed"}
+
+    content_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+
+    if os.path.exists(content_path):
+        return {"message": "This book PDF already exists"}
+
+    book_file.save(content_path)
+    
+    content = book_file.filename
+    print(content)
 
     try:
         if page_count:
             page_count = int(page_count)
             if page_count < 1:
                 return {"message": "Page count must be a positive integer"}
+        
+        if volume:
+            volume = int(volume)
+            if volume < 1:
+                return {"message": "Page count must be a positive integer"}
+            
     except ValueError:
-        return {"message": "Page count should be an integer"}
+        return {"message": "Page count and Volume should be an integer"}
     except Exception as e:
         return {"message": str(e)}
 
@@ -316,7 +355,7 @@ def addBook():
     
     search_word: str = raw(isbn) + raw(book_name) + raw(publisher) + raw(section.name) + raw(str(volume)) + raw(str(page_count))
 
-    book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, 
+    book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content="books/" + filename, 
                      publisher=publisher, volume = volume, section_id=section.id, search_word = search_word)  # type: ignore
     db.session.add(book)
     db.session.commit()
@@ -327,11 +366,11 @@ def addBook():
         db.session.add(author)
     db.session.commit()
 
-    return redirect(f"/viewBooks/{section.id}")
+    return redirect(f"/librarianDashboard/sections/{section.id}/viewBooks")
 
 
 # Don't restrict by role since used by both users
-@app.route("/viewBooks/<section_id>", methods=["GET"])
+@app.route("/librarianDashboard/sections/<section_id>/", methods=["GET"])
 @login_required
 def viewBooks(section_id):
 
@@ -450,7 +489,7 @@ def viewRequests():
     book_requests = BookRequestsModel.query.all()
     return render_template("viewRequests.html", requests = book_requests)
 
-@app.route("/viewRequests/dealWithRequest/", methods = ["GET"])
+@app.route("/librarianDashboard/viewRequests/dealWithRequest/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def dealWithRequest():
@@ -576,7 +615,7 @@ def revokeAccess():
 
     return redirect("/librarianDashboard/revokeAccess")
 
-@app.route("/editSection/", methods = ["GET", "POST"])
+@app.route("/librarianDashboard/editSection/", methods = ["GET", "POST"])
 @login_required
 @check_role(role = "Librarian")
 def editSection():
@@ -609,7 +648,7 @@ def editSection():
     db.session.commit()
     return redirect("/librarianDashboard/sections")
 
-@app.route("/editBook/", methods = ["GET", "POST"])
+@app.route("/librarianDashboard/editBook/", methods = ["GET", "POST"])
 @login_required
 @check_role(role = "Librarian")
 def editBook():
@@ -637,18 +676,39 @@ def editBook():
     name = request.form.get("name")
     authors = request.form.get("authors")
     page_count = request.form.get("page_count")
-    content_path = request.form.get("content_path")
+    book_file = request.files["book_file"]
     publisher = request.form.get("publisher")
     volume = request.form.get("volume")
     section_name = request.form.get("section_name")
+
+    
+    content_path = None
+    if book_file:
+        if book_file.filename:
+            filename = secure_filename(book_file.filename)
+
+            if not isFileAllowed(filename):
+                return {"message": "This file type is not allowed"}
+
+            content_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            print(filename, content_path)
+
+            if os.path.exists(content_path):
+                return {"message": "This book PDF already exists"}
     
     try:
         if page_count:
             page_count = int(page_count)
             if page_count < 1:
                 return {"message": "Page count must be a positive integer"}
+            
+        if volume:
+            volume = int(volume)
+            if volume < 1:
+                return {"message": "Page count must be a positive integer"}
+            
     except:
-        return {"message": "Page count should be an integer"}
+        return {"message": "Page count and Volume should be an integer"}
 
     book = BookModel.query.filter_by(id = book_id).first()
     if not book:
@@ -679,7 +739,15 @@ def editBook():
         book.page_count = page_count
 
     if content_path:
-        book.content = content_path
+        old_content = book.content
+        try:
+            old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_content[6:])
+            old_path = old_path.replace("\\", '/')
+            os.remove(old_path)
+        except Exception as e:
+            return str(e)
+        book.content = "books/" + filename
+        book_file.save(content_path)
 
     if publisher:
         book.publisher = publisher
@@ -691,9 +759,9 @@ def editBook():
 
     db.session.commit()
 
-    return redirect(f"/viewBooks/{section.id}")
+    return redirect(f"/librarianDashboard/sections/{section.id}/viewBooks")
 
-@app.route("/removeSection/", methods = ["GET"])
+@app.route("/librarianDashboard/removeSection/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def removeSection():
@@ -715,7 +783,7 @@ def removeSection():
 
     return redirect("/librarianDashboard/sections")
 
-@app.route("/removeBook/", methods = ["GET"])
+@app.route("/librarianDashboard/removeBook/", methods = ["GET"])
 @login_required
 @check_role(role = "Librarian")
 def removeBook():
@@ -726,6 +794,13 @@ def removeBook():
     
     section_id = book.section_id
 
+    old_content = book.content
+    try:
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_content[6:])
+        os.remove(old_path)
+    except Exception as e:
+        return str(e)
+
     BookAuthorModel.query.filter_by(book_id = id).delete()
     BookRequestsModel.query.filter_by(book_id = id).delete()
     BookIssueModel.query.filter_by(book_id = id).delete()
@@ -734,7 +809,7 @@ def removeBook():
     BookModel.query.filter_by(id = id).delete()
     db.session.commit()
 
-    return redirect(f"/viewBooks/{section_id}")
+    return redirect(f"/librarianDashboard/sections/{section_id}")
 
 @app.route("/librarianDashboard/viewBookStatus/", methods = ["GET"])
 @login_required
