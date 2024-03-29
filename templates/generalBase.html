@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='generalStyle.css') }}">
+    <link rel="stylesheet" href="/../static/bootstrap.min.css">
+    <title>{% block title %}{% endblock %}</title>
+    {% endblock %}
+</head>
+<body>
+    <nav>
+        <div>
+          <h2>Welcome, {{user}}</h2>
+        </div>
+        <div class="navAnchor">
+          <a href="/generalDashboard/books">View Your Books</a>
+          <a href="/generalDashboard/requestBooks">Request Books</a>
+          <a href="/generalDashboard/sections">View Sections</a>
+          <a href="/readFeedback">Read Book Feedbacks</a>
+          <a href="/logout">Logout</a>
+        </div>
+      </nav>
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

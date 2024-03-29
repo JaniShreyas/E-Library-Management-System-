@@ -1,56 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/../static/bootstrap.min.css">
-    <title>Sections</title>
-</head>
-    <div>
-        <h3>Sections</h3>
-        <br>
-        <form action="/sections/search">
-            <input type="search" placeholder="Search" aria-label="Search" name="search_word">
-            <button type="submit">Search</button>
-        </form>
-    </div>
-    <div>
+{% if role == "Librarian" %}
+{% extends "librarianBase.html" %}
+{% else %}
+{% extends "generalBase.html" %}
+{% endif %}
+{% block title %} Sections {% endblock %}
+{% block content %}
+<div>
+    <h3>Sections</h3>
+    <br>
+    <form action="/sections/search">
+        <input type="search" placeholder="Search" aria-label="Search" name="search_word">
+        <button type="submit">Search</button>
+    </form>
+</div>
+<div>
 
-        {% if not sections %}
-        <h3>No sections found!</h3>
-        {% endif %}
+    {% if not sections %}
+    <h3>No sections found!</h3>
+    {% endif %}
 
-        {% for section in sections: %}
-        <br>
-        <div class="card" style="width: 18rem;">
-            <div class="card-body">
-                <h5>    
-                    Name: {{section.name}} <br>
-                    {% if section.description %}
-                    Description: {{section.description}} <br>
-                    {% else %}
-                    Description: No description
-                    {% endif %}
-                </h5>
-            </div>
+    {% for section in sections: %}
+    <br>
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5>    
+                Name: {{section.name}} <br>
+                {% if section.description %}
+                Description: {{section.description}} <br>
+                {% else %}
+                Description: No description
+                {% endif %}
+            </h5>
         </div>
-        <br>
-        {% if role == "Librarian": %}
-        <a href="/librarianDashboard/editSection?id={{section.id}}"><button>Edit Section</button></a>
-        <button onclick = "window.location.href='/librarianDashboard/addBook?section_id={{section.id}}'">Add Book</button>
-        {% if section.id != 0 %}
-        <a href="/librarianDashboard/removeSection?id={{section.id}}"><button>Remove Section</button></a>
-        {% endif %}
-        {% endif %}
-        <a href="/librarianDashboard/sections/{{section.id}}"><button>View Books</button></a>
-        {% endfor %}
     </div>
+    <br>
+    {% if role == "Librarian": %}
+    <a href="/librarianDashboard/editSection?id={{section.id}}"><button>Edit Section</button></a>
+    <button onclick = "window.location.href='/librarianDashboard/addBook?section_id={{section.id}}'">Add Book</button>
+    {% if section.id != 0 %}
+    <a href="/librarianDashboard/removeSection?id={{section.id}}"><button>Remove Section</button></a>
+    {% endif %}
+    {% endif %}
+    <a href="/librarianDashboard/sections/{{section.id}}"><button>View Books</button></a>
+    {% endfor %}
+</div>
 
-    <div>
-        {% if role == "Librarian" %}
-        <br>
-        <a href="/librarianDashboard/addSection"><button>Add Section</button></a>
-        {% endif %}
-    </div>
-</body>
-</html>
+<div>
+    {% if role == "Librarian" %}
+    <br>
+    <a href="/librarianDashboard/addSection"><button>Add Section</button></a>
+    {% endif %}
+</div>
+{% endblock %}

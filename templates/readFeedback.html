@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Read Feedback</title>
-</head>
-<body>
-    <div>
-        {% for feedback in book_feedbacks %}
-        ISBN: {{feedback.isbn}} <br>
-        Book Name: {{feedback.name}} <br>
-        UID: {{feedback.uid}} <br>
-        Feedback: {{feedback.feedback}} <br> <br>
-        {% endfor %}
-    </div>
-</body>
-</html>
+{% if role == "Librarian" %}
+{% extends "librarianBase.html" %}
+{% else %}
+{% extends "generalBase.html" %}
+{% endif %}
+{% block title %} Read Feedback {% endblock %}
+{% block content %}
+<div>
+    {% for feedback in book_feedbacks %}
+    ISBN: {{feedback.isbn}} <br>
+    Book Name: {{feedback.name}} <br>
+    UID: {{feedback.uid}} <br>
+    Feedback: {{feedback.feedback}} <br> <br>
+    {% endfor %}
+</div>
+{% endblock %}

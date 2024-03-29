@@ -35,7 +35,7 @@
             padding: 20px;
             /* border: 1px solid #ccc; */
             border-radius: 5px;
-
+            justify-content: center;
             background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.1),
@@ -85,6 +85,13 @@
             top: 0;
         }
 
+        .registerButton{
+            /* border-style: none; */
+            align-self: center;
+            margin: 10px;
+            
+        }
+
     </style>
 
 </head>
@@ -110,7 +117,7 @@
                 <input class="submit" type="submit">
             </form>
             {% if role == "general": %}
-            <a href="/addUser"><button>Register</button></a>
+            <a href="/addUser">Register</a>
             {% endif %}
         </div>
     </div>

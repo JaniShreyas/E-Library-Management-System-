@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -35,4 +35,38 @@
         {% endfor %}
     </div>
 </body>
-</html>
+</html> -->
+
+{% extends "generalBase.html" %}
+{% block title %} Request Books {% endblock %}
+
+{% block content %}
+<div>
+    <form action="/requestBooks/search">
+        <input type="search" placeholder="Search" aria-label="Search" name="search_word">
+        <button type="submit">Search</button>
+    </form>
+</div>
+<div>
+    {% for book, section in books: %}
+        ISBN: {{book.isbn}} <br>
+        Name: {{book.name}} <br>
+        Publisher: {{book.publisher}} <br>
+        Volume: {{book.volume}} <br>
+        Section: {{section.name}} <br>
+        Authors:
+        {% for book_author in book_authors %}
+            {% if book_author.book_id == book.id: %}
+            {{book_author.author_name}}
+            {% endif %}
+        {% endfor %}
+        <br>
+        {% for issued_book_id in issued_book_ids if issued_book_id == book.id %}
+        [Book already requested or issued] <br>
+        {% else %}
+        <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a> <br>
+        {% endfor %}
+        <br>
+    {% endfor %}
+</div>
+{% endblock %}

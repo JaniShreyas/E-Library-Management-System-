@@ -1,0 +1,29 @@
+html,
+      body {
+        margin: 0px;
+        font-family: Ubuntu, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Oxygen, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+      }
+
+      nav {
+        background-color: #f2f2f2;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      nav div:first-child {
+        font-weight: bold;
+      }
+
+      nav button {
+        margin-right: 10px;
+      }
+
+    .navAnchor a {
+        text-decoration: none;
+        color: black;
+        margin: 5px;
+    }

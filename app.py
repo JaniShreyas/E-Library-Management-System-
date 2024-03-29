@@ -125,7 +125,9 @@ def home():
 def librarianLogin():
     if request.method == "GET":
         if current_user.is_authenticated:
-            return redirect("/librarianDashboard")
+            user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
+            if user_info and user_info.role == "Librarian":
+                return redirect("/librarianDashboard")
 
         return render_template("login.html", role="librarian")
 
@@ -145,12 +147,12 @@ def librarianLogin():
 
     if userLogin and userLogin.password == password:
         if userInfo and userInfo.role != role:
-            flash(f"{username} is not a {role}")
+            flash(f"Incorrect Username or Password")
             return redirect(request.url)
         else:
             login_user(userLogin)
     else:
-        flash(f"Incorrect Password")
+        flash(f"Incorrect Username or Password")
         return redirect(request.url)
 
     return redirect(request.url)
@@ -160,7 +162,9 @@ def librarianLogin():
 def generalLogin():
     if request.method == "GET":
         if current_user.is_authenticated:
-            return redirect("/generalDashboard")
+            user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
+            if user_info and user_info.role == "General":
+                return redirect("/generalDashboard")
         return render_template("login.html", role="general")
 
     username = request.form.get("username")
@@ -179,12 +183,12 @@ def generalLogin():
 
     if userLogin and userLogin.password == password:
         if userInfo and userInfo.role != role:
-            flash(f"{username} is not a {role}")
+            flash(f"Incorrect Username or Password")
             return redirect("/generalLogin")
         else:
             login_user(userLogin)
     else:
-        flash(f"Incorrect Password")
+        flash(f"Incorrect Username or Password")
         return redirect("/generalLogin")
 
     return redirect("/generalDashboard")
@@ -396,10 +400,12 @@ def viewBooks(section_id):
 
 @app.route("/generalDashboard/", methods=["GET"])
 @login_required
+@check_role(role = "General")
 def generalDashboard():
     return render_template("generalDashboard.html")
 
 @app.route("/generalDashboard/requestBooks/", methods=["GET"])
+@check_role(role = "General")
 @login_required
 def requestBooks():
 
@@ -466,6 +472,7 @@ def requestBook():
 
 @app.route("/generalDashboard/books/", methods = ["GET", "POST"])
 @login_required
+@check_role(role = "General")
 def generalBooks():
     if request.method == "GET":
 
@@ -575,6 +582,7 @@ def feedback():
 
 @app.route("/generalDashboard/sections/", methods = ["GET"])
 @login_required
+@check_role(role = "General")
 def generalViewSections():
     sections = SectionModel.query.all()
     user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
@@ -590,7 +598,7 @@ def librarianDashboarRevokeAccess():
     
     book_issues = BookIssueModel.query\
         .join(BookModel, onclause=BookIssueModel.book_id == BookModel.id)\
-        .with_entities(BookModel.name, BookIssueModel.uid).all()
+        .with_entities(BookIssueModel.book_id, BookModel.name, BookIssueModel.uid).all()
     
     return render_template("revokeAccess.html", book_issues = book_issues)
 
@@ -599,9 +607,9 @@ def librarianDashboarRevokeAccess():
 @check_role(role = "Librarian")
 def revokeAccess():
     id = request.args.get("id")
-    username = request.args.get("username")
+    uid = request.args.get("uid")
 
-    user_login = UserLoginModel.query.filter_by(username = username).first()
+    user_login = UserLoginModel.query.filter_by(id = uid).first()
     if not user_login:
         return {"message": "User Login not found"}
 
@@ -851,6 +859,11 @@ def readBook():
 def readFeedback():
     id = request.args.get("id")
 
+    user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
+    role = None
+    if user_info:
+        role = user_info.role
+
     if not id:
         book_feedbacks = BookFeedbackModel.query\
             .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)\
@@ -858,7 +871,7 @@ def readFeedback():
         if not book_feedbacks:
             return {"message": "Book Feedback does not exist"}
     
-        return render_template("readFeedback.html", book_feedbacks = book_feedbacks)
+        return render_template("readFeedback.html", book_feedbacks = book_feedbacks, role = role)
     else:
         book_feedbacks = BookFeedbackModel.query.filter_by(book_id = id)\
             .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)\
@@ -867,7 +880,7 @@ def readFeedback():
         if not book_feedbacks:
             return {"message": "Book Feedback does not exist"}
 
-        return render_template("readSpecificFeedback.html", book_feedbacks = book_feedbacks)
+        return render_template("readSpecificFeedback.html", book_feedbacks = book_feedbacks, role = role)
 
 @app.route("/sections/search/", methods=["GET"])
 @login_required

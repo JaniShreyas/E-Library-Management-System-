@@ -14,8 +14,8 @@
         {% for book_issue in book_issues %}
         Book ID: {{book_issue.book_id}} <br>
         Book Name: {{book_issue.name}} <br>
-        username: {{book_issue.username}} <br>
-        <a href="/revokeAccess?id={{book_issue.book_id}}&username={{book_issue.username}}"><button>Revoke Access</button></a> <br> <br>
+        UID: {{book_issue.uid}} <br>
+        <a href="/revokeAccess?id={{book_issue.book_id}}&uid={{book_issue.uid}}"><button>Revoke Access</button></a> <br> <br>
         {% endfor %}
     </div>
 </body>

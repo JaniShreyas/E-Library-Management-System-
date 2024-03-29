@@ -1,62 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/../static/bootstrap.min.css">
-    <title>Books</title>
-</head>
-<body>
-    <div>
-        <form action="/viewBooks/{{section_id}}/search">
-            <input type="search" placeholder="Search" aria-label="Search" name="search_word">
-            <button type="submit">Search</button>
-        </form>
-        <br>
-    </div>
-    <div>
-        {% if not books: %}
-        <h3>No Books exist in this section yet</h3>
-        {% endif %}
-        
-        {% for book in books: %}
-        <div class="card" style="width: 18rem;">
-            <div class="card-body">
-                <h5>    
-                    ISBN: {{book.isbn}} <br>
-                    Name: {{book.name}} <br>
-                    Page Count: {{book.page_count}} <br>
-                    Publisher: {{book.publisher}} <br>
-                    Volume: {{book.volume}} <br>
-                    Authors:
-                    {% for book_author in book_authors: %}
-                        {% if book.id == book_author.book_id: %}
-                        {{book_author.author_name}}    
-                        {% endif %}
-                    {% endfor %}
-                </h5>
-            </div>
+{% if role == "Librarian" %}
+{% extends "librarianBase.html" %}
+{% else %}
+{% extends "generalBase.html" %}
+{% endif %}
+{% block title %} View Books {% endblock %}
+{% block content %}
+<div>
+    <form action="/viewBooks/{{section_id}}/search">
+        <input type="search" placeholder="Search" aria-label="Search" name="search_word">
+        <button type="submit">Search</button>
+    </form>
+    <br>
+</div>
+<div>
+    {% if not books: %}
+    <h3>No Books exist in this section yet</h3>
+    {% endif %}
+    
+    {% for book in books: %}
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5>    
+                ISBN: {{book.isbn}} <br>
+                Name: {{book.name}} <br>
+                Page Count: {{book.page_count}} <br>
+                Publisher: {{book.publisher}} <br>
+                Volume: {{book.volume}} <br>
+                Authors:
+                {% for book_author in book_authors: %}
+                    {% if book.id == book_author.book_id: %}
+                    {{book_author.author_name}}    
+                    {% endif %}
+                {% endfor %}
+            </h5>
         </div>
+    </div>
 
-        <div>
-            
-            
-            {% if (role == "Librarian") %}
-            <a href="/readBook?id={{book.id}}"><button>Read Book</button></a> 
-            <a href="/librarianDashboard/editBook?id={{book.id}}"><button>Edit Book</button></a> 
-            <a href="/librarianDashboard/removeBook?id={{book.id}}"><button>Remove Book</button></a> 
-            <a href="/librarianDashboard/viewBookStatus?id={{book.id}}"><button>View Status</button></a> 
-            {% endif %}
-            {% if role == "General" %}
-            <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a>
-            {% endif %}
-            <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
-        </div>
-        {% endfor %}
-        <br>
-        {% if role == "Librarian": %}
-        <a href="/librarianDashboard/addBook?section_id={{section_id}}"><button>Add Book</button></a>
+    <div>
+        
+        
+        {% if (role == "Librarian") %}
+        <a href="/readBook?id={{book.id}}"><button>Read Book</button></a> 
+        <a href="/librarianDashboard/editBook?id={{book.id}}"><button>Edit Book</button></a> 
+        <a href="/librarianDashboard/removeBook?id={{book.id}}"><button>Remove Book</button></a> 
+        <a href="/librarianDashboard/viewBookStatus?id={{book.id}}"><button>View Status</button></a> 
         {% endif %}
+        {% if role == "General" %}
+        <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a>
+        {% endif %}
+        <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
     </div>
-</body>
-</html>
+    {% endfor %}
+    <br>
+    {% if role == "Librarian": %}
+    <a href="/librarianDashboard/addBook?section_id={{section_id}}"><button>Add Book</button></a>
+    {% endif %}
+</div>
+{% endblock %}
