@@ -1,43 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/../static/bootstrap.min.css">
-    <title>Sections</title>
-</head>
-    <div>
-        <h3>Sections</h3>
+{% if role == "Librarian" %}
+{% extends "librarianBase.html" %}
+{% else %}
+{% extends "generalBase.html" %}
+{% endif %}
+{% block title %} Sections {% endblock %}
+{% block content %}
+<div>
+    <h3>Sections</h3>
 
-        {% if not sections %}
-        <h3>No matching search results!</h3>
-        {% endif %}
+    {% if not sections %}
+    <h3>No matching search results!</h3>
+    {% endif %}
 
-        {% for section in sections: %}
-        <br>
-        <div class="card" style="width: 18rem;">
-            <div class="card-body">
-                <h5>    
-                    Name: {{section.name}} <br>
-                    {% if section.description %}
-                    Description: {{section.description}} <br>
-                    {% else %}
-                    Description: No description
-                    {% endif %}
-                </h5>
-            </div>
+    {% for section in sections: %}
+    <br>
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5>    
+                Name: {{section.name}} <br>
+                {% if section.description %}
+                Description: {{section.description}} <br>
+                {% else %}
+                Description: No description
+                {% endif %}
+            </h5>
         </div>
-        <br>
-        {% if role == "Librarian": %}
-        <a href="/editSection?id={{section.id}}"><button>Edit Section</button></a>
-        <button onclick = "window.location.href='/addBook?section_id={{section.id}}'">Add Book</button>
-        {% if section.id != 0 %}
-        <a href="/removeSection?id={{section.id}}"><button>Remove Section</button></a>
-        {% endif %}
-        {% endif %}
-        <button onclick = "window.location.href='/viewBooks?section_id={{section.id}}'">View Books</button> <br>
-        {% endfor %}
     </div>
-
-</body>
-</html>
+    <br>
+    {% if role == "Librarian": %}
+    <a href="/editSection?id={{section.id}}"><button>Edit Section</button></a>
+    <button onclick = "window.location.href='/addBook?section_id={{section.id}}'">Add Book</button>
+    {% if section.id != 0 %}
+    <a href="/removeSection?id={{section.id}}"><button>Remove Section</button></a>
+    {% endif %}
+    {% endif %}
+    <button onclick = "window.location.href='/viewBooks?section_id={{section.id}}'">View Books</button> <br>
+    {% endfor %}
+</div>
+{% endblock %}
