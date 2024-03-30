@@ -1,6 +1,14 @@
+import os
 from flask import Blueprint, request
 from flask_restful import Resource, reqparse, Api
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from flask_login import (
+    LoginManager,
+    login_user,
+    logout_user,
+    current_user,
+    login_required,
+)
+from traitlets import default
 from models import (
     db,
     UserLoginModel,
@@ -14,6 +22,8 @@ from models import (
 )
 from typing import List, Callable
 from datetime import date, timedelta
+import werkzeug
+from werkzeug.utils import secure_filename
 
 api_bp = Blueprint("api", __name__)
 api = Api(api_bp)
@@ -40,8 +50,20 @@ reqParser.add_argument("author_names", type=str)
 reqParser.add_argument("issue_time", type=int)
 
 reqParser.add_argument("feedback", type=str)
+reqParser.add_argument("rating", type=int)
 reqParser.add_argument("old_to_new_author", type=str)
 reqParser.add_argument("new_isbn", type=str)
+
+allowed_extensions = ["pdf"]
+upload_folder = os.getcwd() + "/static/books"
+
+
+def raw(input: str) -> str:
+    return input.lower().replace(" ", "")
+
+
+def isFileAllowed(filename: str):
+    return ("." in filename) and (filename.split(".")[-1].lower() in allowed_extensions)
 
 
 # Decorator function to verify role
@@ -80,19 +102,31 @@ class AddUser(Resource):
             password = args["password"]
             first_name = args["first_name"]
             last_name = args["last_name"]
-            role = args["role"]
 
-            if role not in ["Librarian", "General"]:
-                return {"message": "Role must be either Librarian or General"}, 400
+            userInfo = UserLoginModel.query.filter_by(username=username).first()
+            if userInfo:
+                return {"message": "Username already exists"}, 400
+
+            if not first_name:
+                return {"message": "first_name not provided"}, 400
 
             userLogin = UserLoginModel(username=username, password=password)  # type: ignore
             db.session.add(userLogin)
+            db.session.commit()
 
-            info = UserInfoModel(username=userLogin.username, first_name=first_name, last_name=last_name, role=role)  # type: ignore
+            info = UserInfoModel(uid=userLogin.id, first_name=first_name, last_name=last_name, role="General")  # type: ignore
             db.session.add(info)
             db.session.commit()
 
-            return {"message": f"{role} user added successfully"}, 201
+            last_name = info.last_name if info.last_name else ""  # type: ignore
+
+            return {
+                "username": userLogin.username,
+                "password": userLogin.password,
+                "first_name": info.first_name,
+                "last_name": last_name,
+                "role": "General",
+            }, 201
 
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -104,33 +138,28 @@ class Login(Resource):
         try:
             username = args["username"]
             password = args["password"]
-            role = args["role"]
-
-            if role not in ["Librarian", "General"]:
-                return {"message": "Role must be either Librarian or General"}, 400
 
             userLogin = UserLoginModel.query.filter_by(username=username).first()
 
             if userLogin:
                 # User exists
-                info = UserInfoModel.query.filter_by(username=userLogin.username).first()
+                info = UserInfoModel.query.filter_by(uid=userLogin.id).first()
 
                 if not info:
                     return {"message": "Info does not exist"}, 404
 
-                if info.role != role:
-                    return {"message": f"User is not a {role} user"}, 400
-
                 if userLogin.password == password:
                     # Password matches
                     login_user(userLogin)
-                    return {"message": f"{role} user Login successful. Welcome {info.first_name}"}, 200
+                    return {
+                        "message": f"{info.role} user Login successful. Welcome {info.first_name}"
+                    }, 200
                 else:
                     # Password does not match
-                    return {"message": "Incorrect password"}, 400
+                    return {"message": "Incorrect username or password"}, 400
             else:
                 # User does not exist
-                return {"message": f"{role} user does not exist"}, 404
+                return {"message": f"User does not exist"}, 404
 
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -139,25 +168,29 @@ class Login(Resource):
 class UserInfo(Resource):
     @login_required
     def get(self):
-        userLogin = UserLoginModel.query.filter_by(username=current_user.username).first()
+        try:
+            userLogin = UserLoginModel.query.filter_by(id=current_user.id).first()
 
-        if not userLogin:
-            return {"message": "User does not exist"}, 404
+            if not userLogin:
+                return {"message": "User does not exist"}, 404
 
-        info = UserInfoModel.query.filter_by(username=userLogin.username).first()
+            info = UserInfoModel.query.filter_by(uid=userLogin.id).first()
 
-        if not info:
-            return {"message": "User does not exist"}, 404
+            if not info:
+                return {"message": "User does not exist"}, 404
 
-        last_name = info.last_name if info.last_name else ""
+            last_name = info.last_name if info.last_name else ""
 
-        return {
-            "username": userLogin.username,
-            "password": userLogin.password,
-            "first_name": info.first_name,
-            "last_name": last_name,
-            "role": info.role,
-        }, 200
+            return {
+                "username": userLogin.username,
+                "password": userLogin.password,
+                "first_name": info.first_name,
+                "last_name": last_name,
+                "role": info.role,
+            }, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 
 class Logout(Resource):
@@ -181,17 +214,29 @@ class AddSection(Resource):
 
             date_created = date.today()
 
-            section = SectionModel(name=name, date_created=date_created, description=description)  # type: ignore
+            if not name:
+                return {"message": "Name not given"}, 400
+
+            search_word = raw(name)
+            if description:
+                search_word += raw(description)
+
+            section = SectionModel(name=name, date_created=date_created, description=description, search_word=search_word)  # type: ignore
             db.session.add(section)
             db.session.commit()
 
-            return {"message": f"Section {name} added successfully"}, 201
+            return {
+                "name": section.name,
+                "description": section.description,
+                "date_created": str(section.date_created),
+                "search_word": section.search_word,
+            }, 201
 
         except Exception as e:
             return {"error": f"{e}"}, 500
 
 
-class AddBookAuthor(Resource):
+class AddBook(Resource):
     @login_required
     @check_role(role="Librarian")
     def post(self):
@@ -201,10 +246,12 @@ class AddBookAuthor(Resource):
             book_name = args["book_name"]
             page_count = args["page_count"]
             section_name = args["section_name"]
-            content_path = args["content"]
+            book_file = args["book_file"]
             publisher = args["publisher"]
             author_names: str = args["author_names"]
-            author_names_list: List[str] = author_names.split(",")
+            author_names_list: List[str] = [
+                author_name.strip() for author_name in author_names.split(",")
+            ]
 
             section = SectionModel.query.filter_by(name=section_name).first()
 
@@ -216,7 +263,35 @@ class AddBookAuthor(Resource):
             if book:
                 return {"message": "Book already exists"}, 400
 
-            book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content=content_path, publisher=publisher, section_id=section.id)  # type: ignore
+            if not book_file:
+                return {"message": "Book file not given"}
+
+            if not book_file.filename:
+                return {"message": "No file name"}, 400
+
+            filename = secure_filename(book_file.filename)
+
+            if not isFileAllowed(filename):
+                return {"message": "This file type is not allowed"}, 400
+
+            content_path = os.path.join(upload_folder, filename)
+
+            if os.path.exists(content_path):
+                book = BookModel.query.filter_by(content="books/" + filename).first()
+                if not book:
+                    return (
+                        {
+                            "message": "There is a book pdf which exists but there is no book with the corresponding path.\
+                             Need to manually remove the pdf"
+                        },
+                        400,
+                    )
+
+                return {
+                    "message": f"This book PDF already exists and is referenced by book_id: {book.id} with name: {book.name}"
+                }, 400
+
+            book = BookModel(isbn=isbn, name=book_name, page_count=page_count, content="books/" + filename, publisher=publisher, section_id=section.id)  # type: ignore
             db.session.add(book)
             db.session.commit()
 
@@ -225,7 +300,9 @@ class AddBookAuthor(Resource):
                 db.session.add(book_author)
             db.session.commit()
 
-            return {"message": f"Book {book_name} with authors {author_names} added successfully"}, 201
+            return {
+                "message": f"Book {book_name} with authors {author_names} added successfully"
+            }, 201
 
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -296,7 +373,7 @@ class RequestBook(Resource):
         try:
             isbn = args["isbn"]
             issue_time = args["issue_time"]
-            book = BookModel.query.filter_by(isbn=isbn).first()
+            book = BookModel.query.filter_by(isbn = isbn).first()
 
             if issue_time > 7:
                 return {"message": "Issue time cannot be greater than 7"}
@@ -306,21 +383,25 @@ class RequestBook(Resource):
 
             if not book:
                 return {"message": "Book does not exist"}, 404
-            
-            book_request = BookRequestsModel.query.filter_by(book_id=book.id, username=current_user.username).first()
+
+            book_request = BookRequestsModel.query.filter_by(
+                book_id=book.id, uid = current_user.id
+            ).first()
             if book_request:
                 return {"message": "Book already requested"}, 400
 
-            book_issue = BookIssueModel.query.filter_by(book_id=book.id, username=current_user.username).first()
+            book_issue = BookIssueModel.query.filter_by(
+                book_id=book.id, uid = current_user.id
+            ).first()
             if book_issue:
                 return {"message": "Book has already been issued"}, 400
 
-
-            book_request = BookRequestsModel(book_id = book.id, username=current_user.username, date_of_request=date.today(), issue_time=issue_time)  # type: ignore
+            today = date.today()
+            book_request = BookRequestsModel(book_id=book.id, uid = current_user.id, date_of_request=today, issue_time=issue_time)  # type: ignore
             db.session.add(book_request)
             db.session.commit()
 
-            return {"message": f"Book {book.name} requested successfully"}, 201
+            return {"isbn": isbn, "date_of_request": date.today(), "issue_time": today}, 201
 
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -333,7 +414,12 @@ class ViewBookRequests(Resource):
         try:
             book_requests = BookRequestsModel.query.all()
             return [
-                {"book_id": book_request.book_id, "username": book_request.username, "issue_time": book_request.issue_time}
+                {
+                    "book_id": book_request.book_id,
+                    "uid": book_request.uid,
+                    "date_of_request": str(book_request.date_of_request),
+                    "issue_time": book_request.issue_time,
+                }
                 for book_request in book_requests
             ]
 
@@ -350,22 +436,36 @@ class IssueBook(Resource):
             isbn = args["isbn"]
             username = args["username"]
 
-            book = BookModel.query.filter_by(isbn = isbn).first()
+            user_login = UserLoginModel.query.filter_by(username = username).first()
+            if not user_login:
+                return {"message": "User login not found"}, 404
+
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
 
-            book_request = BookRequestsModel.query.filter_by(book_id = book.id, username=username).first()
+            book_request = BookRequestsModel.query.filter_by(
+                book_id=book.id, uid = user_login.id
+            ).first()
 
             if not book_request:
                 return {"message": "Book request does not exist"}, 404
 
-            book_issue = BookIssueModel(book_id=book.id, username=username, date_of_issue=date.today(), date_of_return=date.today() + timedelta(days=book_request.issue_time))  # type: ignore
+            today = date.today()
+            return_date = today + timedelta(days=book_request.issue_time)
+            book_issue = BookIssueModel(book_id=book.id, uid = user_login.id, date_of_issue=today, date_of_return=return_date)  # type: ignore
             db.session.add(book_issue)
 
-            BookRequestsModel.query.filter_by(book_id=book.id, username=username).delete()
+            BookRequestsModel.query.filter_by(
+                book_id=book.id, uid = user_login.id
+            ).delete()
             db.session.commit()
 
-            return {"message": f"Book {book.name} issued to {username} successfully"}, 201
+            return {
+                "book_id": book_issue.book_id,
+                "date_of_issue": str(today),
+                "date_of_return": str(return_date)
+            }, 201
 
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -374,7 +474,7 @@ class IssueBook(Resource):
 class ViewIssuedBooks(Resource):
     @login_required
     def get(self):
-        info = UserInfoModel.query.filter_by(username=current_user.username).first()
+        info = UserInfoModel.query.filter_by(uid = current_user.id).first()
         if not info:
             return {"message": "User info does not exist"}, 404
 
@@ -383,12 +483,18 @@ class ViewIssuedBooks(Resource):
                 username = current_user.username
             else:
                 username = request.args.get("username", default="testUname")
+            
+            user_login = UserLoginModel.query.filter_by(username = username).first()
+            if not user_login:
+                if info.role == "Librarian":
+                    return {"message": "Provide username in argument"}, 400
+                return {"message": "User login not found"}, 404
 
-            book_issue = BookIssueModel.query.filter_by(username=username).all()
+            book_issue = BookIssueModel.query.filter_by(uid = user_login.id).all()
 
             outputList = []
             for issued_book in book_issue:
-                book = BookModel.query.filter_by(isbn=issued_book.isbn).first()
+                book = BookModel.query.filter_by(id=issued_book.book_id).first()
                 if not book:
                     return {"message": "Book does not exist"}, 404
                 section = SectionModel.query.filter_by(id=book.section_id).first()
@@ -419,18 +525,26 @@ class ReturnBook(Resource):
         args = reqParser.parse_args()
         try:
             isbn = args["isbn"]
-            username = current_user.username
+            uid = current_user.id
 
-            book = BookModel.query.filter_by(isbn = isbn).first()
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
 
-            book_issue = BookIssueModel.query.filter_by(book_id=book.id, username=username).first()
+            book_issue = BookIssueModel.query.filter_by(
+                book_id=book.id, uid = uid
+            ).first()
+
+            user_login = UserLoginModel.query.filter_by(id = uid).first()
+            if not user_login:
+                return {"message": "User login not found"}, 404
 
             if not book_issue:
-                return {"message": f"Book with isbn {isbn} is not issued by user {username}"}, 404
+                return {
+                    "message": f"Book with isbn {isbn} is not issued by user {user_login.username}"
+                }, 404
 
-            BookIssueModel.query.filter_by(book_id=book.id, username=username).delete()
+            BookIssueModel.query.filter_by(book_id=book.id, uid = uid).delete()
             db.session.commit()
 
             return {"message": f"Book {book.name} has been returned"}, 200
@@ -447,18 +561,19 @@ class BookFeedback(Resource):
         try:
             isbn = args["isbn"]
             feedback = args["feedback"]
+            rating = args["rating"]
 
-            username = current_user.username
+            uid = current_user.id
 
-            book = BookModel.query.filter_by(isbn = isbn).first()
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
 
-            book_feedback = BookFeedbackModel(book_id=book.id, username=username, feedback=feedback)  # type: ignore
+            book_feedback = BookFeedbackModel(book_id=book.id, uid = uid, feedback=feedback, rating = rating)  # type: ignore
             db.session.add(book_feedback)
             db.session.commit()
 
-            return {"message": f"Feedback for {book.name} submitted successfully"}, 200
+            return {"book_id": book.id, "feedback": feedback, "rating": rating}, 200
 
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -471,7 +586,7 @@ class ViewFeedbacks(Resource):
         try:
             isbn = request.args.get("isbn", default=None)
 
-            book = BookModel.query.filter_by(isbn = isbn).first()
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
 
@@ -485,7 +600,12 @@ class ViewFeedbacks(Resource):
                 return {"message": "No feedbacks of this book exist"}
 
             return [
-                {"isbn": isbn, "username": feedback.username, "feedback": feedback.feedback}
+                {
+                    "isbn": isbn,
+                    "username": feedback.uid,
+                    "feedback": feedback.feedback,
+                    "rating": feedback.rating
+                }
                 for feedback in feedbacks
             ]
 
@@ -512,14 +632,18 @@ class EditBookInfo(Resource):
             if old_to_new_author:
                 oldAuthor, newAuthor = tuple(old_to_new_author.split(","))
 
-            book = BookModel.query.filter_by(id = book_id).first()
+            book = BookModel.query.filter_by(id=book_id).first()
             if not book:
                 return {"message": f"Book does not exist"}, 404
 
             if oldAuthor:
-                book_author = BookAuthorModel.query.filter_by(book_id = book_id, author_name=oldAuthor).first()
+                book_author = BookAuthorModel.query.filter_by(
+                    book_id=book_id, author_name=oldAuthor
+                ).first()
                 if not book_author:
-                    return {"message": f"ISBN does not exist or Author {oldAuthor} does not exist"}, 404
+                    return {
+                        "message": f"ISBN does not exist or Author {oldAuthor} does not exist"
+                    }, 404
 
             section = SectionModel.query.filter_by(name=section_name).first()
 
@@ -564,18 +688,26 @@ class RevokeBookAccess(Resource):
             username = args["username"]
             isbn = args["isbn"]
 
-            book = BookModel.query.filter_by(isbn = isbn).first()
+            book = BookModel.query.filter_by(isbn=isbn).first()
             if not book:
                 return {"message": "Book does not exist"}, 404
 
-            book_issue = BookIssueModel.query.filter_by(username=username, book_id=book.id).first()
+            user_login = UserLoginModel.query.filter_by(username = username).first()
+            if not user_login:
+                return {"message": "User login does not exist"}, 404
+
+            book_issue = BookIssueModel.query.filter_by(
+                uid = user_login.id, book_id=book.id
+            ).first()
             if not book_issue:
                 return {"message": "Book Issue does not exist"}, 404
 
-            BookIssueModel.query.filter_by(username=username, book_id=book.id).delete()
+            BookIssueModel.query.filter_by(uid = user_login.id, book_id=book.id).delete()
             db.session.commit()
 
-            return {"message": f"Revoked access of user {username} from book with isbn {isbn}"}
+            return {
+                "message": f"Revoked access of user {username} from book with isbn {isbn}"
+            }, 200
 
         except Exception as e:
             return {"error": f"{e}"}, 500
@@ -615,6 +747,9 @@ class RemoveBook(Resource):
 
             BookAuthorModel.query.filter_by(book_id=book.id).delete()
             BookModel.query.filter_by(isbn=isbn).delete()
+            BookRequestsModel.query.filter_by(book_id = book.id).delete()
+            BookIssueModel.query.filter_by(book_id = book.id).delete()
+            BookFeedbackModel.query.filter_by(book_id = book.id).delete()
             db.session.commit()
 
             return {"message": f"Book {book.name} deleted successfully"}
@@ -641,10 +776,16 @@ class FindBook(Resource):
                 books = BookModel.query.filter_by(publisher=publisher).all()
             elif author_name:
                 books = (
-                    BookModel.query.join(BookAuthorModel, BookAuthorModel.book_id == BookModel.id)
+                    BookModel.query.join(
+                        BookAuthorModel, BookAuthorModel.book_id == BookModel.id
+                    )
                     .filter_by(author_name=author_name)
                     .with_entities(
-                        BookModel.isbn, BookModel.name, BookModel.page_count, BookModel.content, BookModel.section_id
+                        BookModel.isbn,
+                        BookModel.name,
+                        BookModel.page_count,
+                        BookModel.content,
+                        BookModel.section_id,
                     )
                     .all()
                 )
@@ -707,7 +848,7 @@ api.add_resource(Login, "/api/login")
 api.add_resource(UserInfo, "/api/userInfo")
 api.add_resource(Logout, "/api/logout")
 api.add_resource(AddSection, "/api/addSection")
-api.add_resource(AddBookAuthor, "/api/addBookAuthor")
+api.add_resource(AddBook, "/api/addBook")
 api.add_resource(ViewSections, "/api/viewSections")
 api.add_resource(ViewAllBooks, "/api/viewAllBooks")
 api.add_resource(RequestBook, "/api/requestBook")

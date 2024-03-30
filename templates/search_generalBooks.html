@@ -20,7 +20,8 @@
         {% endif %}
     {% endfor %}
     <br>
-    [Baaki saman yahan pe] <br>
+    Publisher: {{book.publisher}}<br>
+    Volume: {{book.volume}}<br><br>
     <a href="/readBook?id={{book.id}}"><button>Read Book</button></a>
     <a href="/returnBook?id={{book.id}}"><button>Return Book</button></a> <br> <br>
 
@@ -38,7 +39,8 @@
         {% endif %}
     {% endfor %}
     <br>
-    [Baaki saman yahan pe bhi] <br><br>
+    Publisher: {{book.publisher}}<br>
+    Volume: {{book.volume}}<br>
 
     {% endfor %}
     {% endif %}

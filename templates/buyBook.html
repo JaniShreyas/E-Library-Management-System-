@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
+    <title>Buy Book</title>
+</head>
+<body>
+    <h3 class="buyInfo">{{book.name}}</h3>
+    <h3 class="buyInfo">{{book.price}}</h3>
+
+    <div class="wrapper">
+        <h1 class="loginHeading">Buy {{book.name}}</h1>
+        <div class="formClass">
+            <form class="formClass" action="/buyBook?id={{book.id}}" method="post">
+                <input type="submit">
+            </form>
+        </div>
+    </div>    
+</body>
+</html>

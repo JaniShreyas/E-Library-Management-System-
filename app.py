@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, flash, url_for
+from flask import Flask, redirect, render_template, request, flash, send_from_directory, url_for
 from flask_login import (
     LoginManager,
     login_user,
@@ -8,6 +8,7 @@ from flask_login import (
 )
 from sqlalchemy import desc
 from models import (
+    BuyHistoryModel,
     db,
     UserLoginModel,
     UserInfoModel,
@@ -384,7 +385,7 @@ def addBook():
     publisher = request.form.get("publisher")
     volume = request.form.get("volume")
     author_names = request.form.get("author_names")
-    
+    price = request.form.get("price")
 
     if not book_file:
         flash("Book file not given")
@@ -416,9 +417,6 @@ def addBook():
         )
         return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
-    content = book_file.filename
-    print(content)
-
     try:
         if page_count:
             page_count = int(page_count)
@@ -447,7 +445,9 @@ def addBook():
         flash("Author names not given")
         return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
 
-    author_names_list: List[str] = author_names.split(",")
+    author_names_list: List[str] = [
+        author_name.strip() for author_name in author_names.split(",")
+    ]
 
     if not book_name:
         flash("Book name not provided")
@@ -484,6 +484,7 @@ def addBook():
         volume=volume,
         section_id=section.id,
         search_word=search_word,
+        price=price,
     )  # type: ignore
     db.session.add(book)
     db.session.commit()
@@ -1228,7 +1229,7 @@ def searchSection():
     if search_target not in ("books", "sections"):
         flash("Search target should be either 'books' or 'sections'")
         return redirect(url_for("sections"))
-    
+
     if search_target == "books":
         return redirect(f"/requestBooks/search?search_word={search_word}")
 
@@ -1309,16 +1310,46 @@ def searchGeneralBooks():
             if book.id == issue.book_id:
                 issued.append(book)
 
-    user_info = UserInfoModel.query.filter_by(uid=current_user.id).first()
-
     return render_template(
         "search_generalBooks.html",
         requested=requested,
         issued=issued,
         book_authors=book_authors,
-        name=current_user.first_name,
     )
 
+
+@app.route("/buyBook", methods=["GET", "POST"])
+def buyBook():
+    id = request.args.get("id")
+    book = BookModel.query.filter_by(id=id).first()
+    if not book:
+        flash("Book not found")
+        return redirect(f"/buyBook?id={id}")
+
+    if request.method == "GET":
+        return render_template("buyBook.html", book=book)
+
+    buy_history = BuyHistoryModel.query.filter_by(
+        uid=current_user.id, book_id=book.id
+    ).first()
+    if buy_history:
+        flash("You have already bought this book")
+    else:
+        buy_history = BuyHistoryModel(uid = current_user.id, book_id = book.id, bought_at = date.today())  # type: ignore
+        db.session.add(buy_history)
+        db.session.commit()
+
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"], book.content.replace("books/", '', 1), as_attachment=True
+    )
+
+@app.route("/test")
+def route():
+    id = request.args.get("id")
+    book = BookModel.query.filter_by(id=id).first()
+    return send_from_directory(
+            app.config["UPLOAD_FOLDER"], book.content.replace("books/", '', 1), as_attachment=True # type: ignore
+        ) 
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -20,7 +20,7 @@
         {% endif %}
     {% endfor %}
     <br>
-    {{bookIssue.date_of_issue}} <br>
+    Return Date: {{bookIssue.date_of_return}} <br>
     <a href="/readBook?id={{book.id}}"><button>Read Book</button></a>
     <a href="/returnBook?id={{book.id}}"><button>Return Book</button></a> <br> <br>
 
@@ -37,7 +37,9 @@
         {% endif %}
     {% endfor %}
     <br>
-    [Baaki saman yahan pe bhi] <br><br>
+    Publisher: {{book.publisher}}<br>
+    Volume: {{book.volume}}<br>
+    Date of Request: {{bookRequest.date_of_request}}
 
     {% endfor %}
 </div>

@@ -16,7 +16,7 @@ class UserLoginModel(db.Model, UserMixin):
 
 class UserInfoModel(db.Model):
     __tablename__ = "user_info"
-    uid = Column(Integer, ForeignKey("user_login.id"), unique=True, nullable=False, primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), unique=True, primary_key=True)
     first_name = Column(String(20), nullable=False)
     last_name = Column(String(20))
     role = Column(String(20), nullable=False)
@@ -42,6 +42,7 @@ class BookModel(db.Model):
     volume = Column(Integer, nullable = False)
     section_id = Column(Integer, ForeignKey("section.id"), nullable=False)
     search_word = Column(String(500), nullable=False)
+    price = Column(Integer, nullable=False)
 
 
 class BookAuthorModel(db.Model):
@@ -54,7 +55,7 @@ class BookAuthorModel(db.Model):
 class BookRequestsModel(db.Model):
     __tablename__ = "book_request"
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
-    uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), primary_key=True)
     date_of_request = Column(Date, nullable=False)
     issue_time = Column(Integer, nullable=False)
 
@@ -62,14 +63,20 @@ class BookRequestsModel(db.Model):
 class BookIssueModel(db.Model):
     __tablename__ = "book_issue"
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
-    uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), primary_key=True)
     date_of_issue = Column(Date, nullable=False)
     date_of_return = Column(Date, nullable=False)
 
 
 class BookFeedbackModel(db.Model):
     __tablename__ = "book_feedback"
-    uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
+    uid = Column(Integer, ForeignKey("user_login.id"), primary_key=True)
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
     feedback = Column(String(500), nullable=False)
     rating = Column(Integer, nullable=False)
+
+class BuyHistoryModel(db.Model):
+    __tablename__ = "buy_history"
+    uid = Column(Integer, ForeignKey("user_login.id"), primary_key=True)
+    book_id = Column(Integer, ForeignKey("book.id"),  primary_key=True)
+    bought_at = Column(Date, nullable=False)
