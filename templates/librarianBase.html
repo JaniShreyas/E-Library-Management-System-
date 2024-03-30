@@ -6,6 +6,7 @@
     {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='generalStyle.css') }}">
     <link rel="stylesheet" href="/../static/bootstrap.min.css">
+    {% block link %}{% endblock %}
     <title>{% block title %}{% endblock %}</title>
     {% endblock %}
 </head>

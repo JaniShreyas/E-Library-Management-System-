@@ -10,6 +10,10 @@
     <br>
     <form action="/sections/search">
         <input type="search" placeholder="Search" aria-label="Search" name="search_word">
+        <select name="search_target">
+            <option value="sections" selected>Sections</option>
+            <option value="books">Books</option>
+        </select>
         <button type="submit">Search</button>
     </form>
 </div>
@@ -26,7 +30,7 @@
             <h5>    
                 Name: {{section.name}} <br>
                 {% if section.description %}
-                Description: {{section.description}} <br>
+                Description: {{section.description}}
                 {% else %}
                 Description: No description
                 {% endif %}
@@ -42,6 +46,7 @@
     {% endif %}
     {% endif %}
     <a href="/librarianDashboard/sections/{{section.id}}"><button>View Books</button></a>
+    <br>
     {% endfor %}
 </div>
 

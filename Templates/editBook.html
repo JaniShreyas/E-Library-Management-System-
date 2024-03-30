@@ -17,38 +17,37 @@
         {% endwith %}
     </div>
 
-    <div>
-        <h3>Edit Book {{book.name}}</h3> <br>
-    </div>
-
-    <div>
-        <form class="editBookForm" action="/librarianDashboard/editBook?id={{book.id}}" method="post" enctype="multipart/form-data">
-            <label for="isbn">ISBN</label>
-            <input id="isbn" type="text" name="isbn" value="{{book.isbn}}"></input>
-            <label for="name">Name</label>
-            <input id="name" type="text" name="name" value="{{book.name}}"></input>
-            <label for="authors">Authors (comma separated)</label>
-            <input id="authors" type="text" name="authors"></input>
-            <label for="page_count">Page Count</label>
-            <input id="page_count" type="text" name="page_count" value="{{book.page_count}}" min="0"></input>
-            <label for="content_path">Content Path</label>
-            <input type="file" name="book_file">
-            <label for="publisher">Publisher</label>
-            <input id="publisher" type="text" name="publisher" value="{{book.publisher}}"></input>
-            <label for="volume">Publisher</label>
-            <input id="volume" type="text" name="volume" value="{{book.volume}}"></input>
-            <label for="section_name">Section Name</label>
-            <select name="section_name" id="section_name">
-                {% for section_iter in sections %}
-                    {% if section_iter.name == section.name %}
-                    <option value="{{section.name}}" selected>{{section.name}}</option>
-                    {% else %}
-                    <option value="{{section_iter.name}}">{{section_iter.name}}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-            <input class="submit" type="submit">Submit</input>
-        </form>
+    <div class="wrapper">
+        <h1 class="loginHeading">Edit Book {{book.name}}</h1>
+        <div class="formClass">
+            <form class="formClass" action="/librarianDashboard/editBook?id={{book.id}}" method="post" enctype="multipart/form-data">
+                <label for="isbn">ISBN</label>
+                <input type="text" name="isbn" value="{{book.isbn}}" minlength="13" maxlength="13"></input>
+                <label for="name">Name</label>
+                <input type="text" name="name" value="{{book.name}}"></input>
+                <label for="authors">Authors (comma separated)</label>
+                <input type="text" name="authors"></input>
+                <label for="page_count">Page Count</label>
+                <input type="number" name="page_count" value="{{book.page_count}}" min="0"></input>
+                <label for="content_path">Content Path</label>
+                <input type="file" name="book_file">
+                <label for="publisher">Publisher</label>
+                <input type="text" name="publisher" value="{{book.publisher}}"></input>
+                <label for="volume">Publisher</label>
+                <input type="text" name="volume" value="{{book.volume}}"></input>
+                <label for="section_name">Section Name</label>
+                <select name="section_name">
+                    {% for section_iter in sections %}
+                        {% if section_iter.name == section.name %}
+                        <option value="{{section.name}}" selected>{{section.name}}</option>
+                        {% else %}
+                        <option value="{{section_iter.name}}">{{section_iter.name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <input class="submit" type="submit">
+            </form>
+        </div>
     </div>
 </body>
 </html>

@@ -17,16 +17,17 @@
         {% endwith %}
     </div>
 
-    <div>
-        <form class="feedbackForm" action="/feedback?id={{book.id}}" method="post">
-            <label for="name">Book Name</label>
-            <input id="name" type="text" name="name" value={{book.name}}></input>
-            <label for="feedback">Feedback</label>
-            <input id="feedback" type="text" name="feedback"></input>
-            <label for="rating">Feedback</label>
-            <input id="rating" type="text" name="rating"></input>
-            <input class="submit" type="submit">
-        </form>
+    <div class="wrapper">
+        <h1 class="loginHeading">Feedback for {{book.name}}</h1>
+        <div class="formClass">
+            <form class="formClass" action="/feedback?id={{book.id}}" method="post">
+                <label for="feedback">Feedback</label>
+                <input type="text" name="feedback"></input>
+                <label for="rating">Rating</label>
+                <input type="number" name="rating" min="0" max="10"></input>
+                <input class="submit" type="submit">
+            </form>
+        </div>
     </div>
 </body>
 </html>

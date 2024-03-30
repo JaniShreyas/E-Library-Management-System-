@@ -40,7 +40,11 @@
         <a href="/librarianDashboard/viewBookStatus?id={{book.id}}"><button>View Status</button></a> 
         {% endif %}
         {% if role == "General" %}
-        <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a>
+        {% for my_book in my_books if my_book.book_id == book.id %}
+        [Book already requested or issued] <br>
+        {% else %}
+        <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a> <br>
+        {% endfor %}
         {% endif %}
         <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
     </div>

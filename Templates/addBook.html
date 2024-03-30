@@ -18,31 +18,31 @@
         {% endwith %}
     </div>
     <div class="wrapper">
-        <h1 class="libraryLoginHeading">Add Book</h1>
+        <h1 class="loginHeading">Add Book</h1>
         <div class="formClass">
             <form class="formClass" action="/librarianDashboard/addBook?section_id={{section_id}}" method="POST" enctype="multipart/form-data">
         <label for="isbn">ISBN</label>
-        <input id="isbn" type="text" name="isbn"></input>
+        <input type="text" name="isbn" minlength="13" maxlength="13"></input>
         <label for="book_name">Book Name</label>
-        <input id="book_name" type="text" name="book_name"></input>
+        <input type="text" name="book_name"></input>
         <label for="page_count">Page Count</label>
-        <input id="page_count" type="text" name="page_count"></input>
+        <input type="number" name="page_count"></input>
         <label for="content">Content</label>
         <input type="file" name="book_file">
         <label for="publisher">Publisher</label>
-        <input id="publisher" type="text" name="publisher"></input>
+        <input type="text" name="publisher"></input>
         <label for="volume">Volume</label>
-        <input id="volume" type="text" name="volume"></input>
+        <input type="text" name="volume"></input>
         {% if not section_id %}
         <label for="section">Section</label>
-        <select id="section_name" type="text" name="section_name"></input>
+        <select type="text" name="section_name"></input>
             {% for section in sections %}
             <option value="{{section.name}}">{{section.name}}</option> <br>
             {% endfor %}
         </select>
         {% endif %}
         <label for="author_names">Author Names</label>
-        <input id="author_names" type="text" name="author_names"></input>
+        <input type="text" name="author_names"></input>
         <input class="submit" type="submit">
     </form>
         </div>

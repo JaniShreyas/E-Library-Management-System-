@@ -3,6 +3,12 @@
 
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
+    <style>
+        .controlKey{
+            position: fixed;
+            top:0;
+        }
+    </style>
 </head>
 
 <body>
@@ -16,16 +22,16 @@
         {% endwith %}
     </div>
 
-    <button id="prevButton" disabled="true">Previous</button>
-    <button id="nextButton">Next</button>
-    <p id="pageNumText"></p>
-    <p id="totalPages"></p>
-    <input type="number" id="pageNum" width="1px" onchange="updateAndRender()">
-
+    <div>
+        <button id="prevButton" disabled="true" class="controlKey" style="left: 650px">Previous</button>
+        <button id="nextButton" class="controlKey" style="left: 800px">Next</button>
+        <p id="pageNumText" class="controlKey"></p>
+        <p id="totalPages" class="controlKey"></p>
+        <input type="number" id="pageNum" width="1px" onchange="updateAndRender()" class="controlKey" style="width: 50px;">
+    </div>
     <div>
         <canvas id="pdf-canvas"></canvas>
     </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>
     <script type="module">
         var url = "{{url_for('static', filename=book.content)}}";

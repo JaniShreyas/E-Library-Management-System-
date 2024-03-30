@@ -1,5 +1,5 @@
 from enum import auto
-from sqlalchemy import Integer, String, Column, ForeignKey, DateTime, distinct, null
+from sqlalchemy import Date, Integer, String, Column, ForeignKey, DateTime, distinct, null
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
@@ -26,7 +26,7 @@ class SectionModel(db.Model):
     __tablename__ = "section"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(20), nullable=False, unique=True)
-    date_created = Column(DateTime, nullable=False)
+    date_created = Column(Date, nullable=False)
     description = Column(String(100), nullable=False)
     search_word = Column(String(150), nullable=False)
 
@@ -55,7 +55,7 @@ class BookRequestsModel(db.Model):
     __tablename__ = "book_request"
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
     uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
-    date_of_request = Column(DateTime, nullable=False)
+    date_of_request = Column(Date, nullable=False)
     issue_time = Column(Integer, nullable=False)
 
 
@@ -63,8 +63,8 @@ class BookIssueModel(db.Model):
     __tablename__ = "book_issue"
     book_id = Column(Integer, ForeignKey("book.id"), primary_key=True)
     uid = Column(Integer, ForeignKey("user_login.id"), nullable=False, primary_key=True)
-    date_of_issue = Column(DateTime, nullable=False)
-    date_of_return = Column(DateTime, nullable=False)
+    date_of_issue = Column(Date, nullable=False)
+    date_of_return = Column(Date, nullable=False)
 
 
 class BookFeedbackModel(db.Model):

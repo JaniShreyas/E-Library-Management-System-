@@ -1,33 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
-    <title>View Book Status</title>
-</head>
-<body>
-    <div class="flash">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                {{message}} <br>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
+{% extends "librarianBase.html" %}
+{% block title %}Book Status{% endblock %}
+{% block content %}
 
-    <div>
-        <h3>Book ID: {{id}}</h3>
-        <br>
+<div>
+    {% if not book_and_users %}
+    <h3>No book issues exist yet!</h3>
+    {% else %}
 
-        {% for book_user in book_and_users: %}
-        UID: {{book_user.uid}} <br>
-        Name: {{book_user.first_name + " " + book_user.last_name}} <br>
-        Role: {{book_user.role}} <br>
-        Date Of Issue: {{book_user.date_of_issue}} <br>
-        Date of Return: {{book_user.date_of_return}} <br> <br>
-        {% endfor %}
-    </div>
-</body>
-</html>
+    <h3>Book ID: {{id}}</h3>
+    <br>
+
+    {% for book_user in book_and_users: %}
+    UID: {{book_user.uid}} <br>
+    Name: {{book_user.first_name + " " + book_user.last_name}} <br>
+    Role: {{book_user.role}} <br>
+    Date Of Issue: {{book_user.date_of_issue}} <br>
+    Date of Return: {{book_user.date_of_return}} <br> <br>
+    {% endfor %}
+
+    {% endif %}
+</div>
+{% endblock %}

@@ -8,10 +8,16 @@
 <h3>Feedbacks for {{book_feedbacks[0].name}}</h3> <br>
     
     <div>
-        {% for feedback in book_feedbacks %}
-        UID: {{feedback.uid}} <br>
-        Feedback: {{feedback.feedback}} <br> 
-        Rating: {{feedback.rating}} <br>
-        {% endfor %}
+        {% if not book_feedbacks %}
+            <h3>No feedbacks exist yet!</h3>
+        {% else %}
+            {% for feedback in book_feedbacks %}
+                ISBN: {{feedback.isbn}} <br>
+                Book Name: {{feedback.name}} <br>
+                UID: {{feedback.uid}} <br>
+                Feedback: {{feedback.feedback}} <br>
+                Rating: {{feedback.rating}} <br> <br>
+            {% endfor %}
+        {% endif %}
     </div>
 {% endblock %}

@@ -17,18 +17,17 @@
         {% endwith %}
     </div>
 
-    <div>
-        <h3>Edit Section {{section.name}}</h3> <br>
-    </div>
-
-    <div>
-        <form class="editSectionForm" action="/librarianDashboard/editSection?id={{section.id}}" method="post">
-            <label for="name">Name</label>
-            <input id="name" type="text" name="name" value="{{section.name}}"></input>
-            <label for="description">Description</label>
-            <input id="description" type="text" name="description" value="{{section.description}}"></input>
-            <input class="submit" type="submit">
-        </form>
+    <div class="wrapper">
+        <h1 class="loginHeading">Edit Section {{section.name}}</h1>
+        <div class="formClass">
+            <form class="formClass" action="/librarianDashboard/editSection?id={{section.id}}" method="post">
+                <label for="name">Name</label>
+                <input type="text" name="name" value="{{section.name}}"></input>
+                <label for="description">Description</label>
+                <input type="text" name="description" value="{{section.description}}"></input>
+                <input class="submit" type="submit">
+            </form>
+        </div>
     </div>
 </body>
 </html>

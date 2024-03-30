@@ -17,10 +17,17 @@
         {% endwith %}
     </div>
 
-    <form action="/requestBook?id={{id}}" method="POST">
-        <label for="issue_time">Issue Time</label>
-        <input id="issue_time" type="number" name="issue_time" min="0" max="7"></input>
-        <input class="submit" type="submit">
-    </form>
+    
+
+    <div class="wrapper">
+        <h1 class="loginHeading">Request Book</h1>
+        <div class="formClass">
+            <form class="formClass" action="/requestBook?id={{id}}" method="POST">
+                <label for="issue_time">Issue Time (in days)</label>
+                <input type="number" name="issue_time" min="0" max="7"></input>
+                <input class="submit" type="submit">
+            </form>
+        </div>
+    </div>
 </body>
 </html>

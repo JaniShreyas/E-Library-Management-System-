@@ -13,7 +13,7 @@ from models import (
     BookFeedbackModel,
 )
 from typing import List, Callable
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 
 api_bp = Blueprint("api", __name__)
 api = Api(api_bp)
@@ -179,7 +179,7 @@ class AddSection(Resource):
             if section:
                 return {"message": f"Section {name} already exists"}, 400
 
-            date_created = datetime.now()
+            date_created = date.today()
 
             section = SectionModel(name=name, date_created=date_created, description=description)  # type: ignore
             db.session.add(section)
@@ -316,7 +316,7 @@ class RequestBook(Resource):
                 return {"message": "Book has already been issued"}, 400
 
 
-            book_request = BookRequestsModel(book_id = book.id, username=current_user.username, date_of_request=datetime.now(), issue_time=issue_time)  # type: ignore
+            book_request = BookRequestsModel(book_id = book.id, username=current_user.username, date_of_request=date.today(), issue_time=issue_time)  # type: ignore
             db.session.add(book_request)
             db.session.commit()
 
@@ -359,7 +359,7 @@ class IssueBook(Resource):
             if not book_request:
                 return {"message": "Book request does not exist"}, 404
 
-            book_issue = BookIssueModel(book_id=book.id, username=username, date_of_issue=datetime.now(), date_of_return=datetime.now() + timedelta(days=book_request.issue_time))  # type: ignore
+            book_issue = BookIssueModel(book_id=book.id, username=username, date_of_issue=date.today(), date_of_return=date.today() + timedelta(days=book_request.issue_time))  # type: ignore
             db.session.add(book_issue)
 
             BookRequestsModel.query.filter_by(book_id=book.id, username=username).delete()

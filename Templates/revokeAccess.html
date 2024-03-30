@@ -10,6 +10,8 @@
     Book ID: {{book_issue.book_id}} <br>
     Book Name: {{book_issue.name}} <br>
     UID: {{book_issue.uid}} <br>
+    Name: {{book_issue.first_name + ' ' + book_issue.last_name}}
+    <br>
     <a href="/revokeAccess?id={{book_issue.book_id}}&uid={{book_issue.uid}}"><button>Revoke Access</button></a> <br> <br>
     {% endfor %}
 </div>
