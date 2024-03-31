@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="wrapper">
-        <h1 class="loginHeading">Buy {{book.name}} for Rs{{book.price}}</h1>
+        <h1 class="loginHeading">Buy {{book.name}} for {{"Rs. {:,}".format(book.price)}}</h1>
         <div class="formClass">
             <form class="formClass" action="/buyBook?id={{book.id}}" method="post">
                 <input type="submit">

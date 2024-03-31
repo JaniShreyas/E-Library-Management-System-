@@ -599,6 +599,9 @@ class BookFeedback(Resource):
             feedback = args["feedback"]
             rating = args["rating"]
 
+            if rating not in range(0,11):
+                return {"message": "Rating should be in range (1, 10)"}, 400
+
             uid = current_user.id
 
             book = BookModel.query.filter_by(isbn=isbn).first()
@@ -868,6 +871,9 @@ class RemoveSection(Resource):
             section = SectionModel.query.filter_by(name=name).first()
             if not section:
                 return {"message": f"Section {name} does not exist"}, 404
+            
+            if section.id == 0:
+                return {"message": "This section cannot be removed"}, 400
 
             BookModel.query.filter_by(section_id=section.id).update({"section_id": 0})
             SectionModel.query.filter_by(name=name).delete()

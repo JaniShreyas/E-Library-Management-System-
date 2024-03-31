@@ -5,24 +5,23 @@
 {% endif %}
 {% block title %} Read Feedback {% endblock %}
 {% block content %}
-<h3>Feedbacks for {{book_feedbacks[0].name}}</h3> <br>
-    
 {% if not book_feedbacks %}
 <h3>No feedbacks exist yet!</h3>
 {% else %}
+<h3>Feedbacks for {{book_feedbacks[0].name}}</h3> <br>
+{% for feedback in book_feedbacks %}
     <div class="card" style="width: 18rem;">
         <div class="card-body">
             <h5>    
-                    {% for feedback in book_feedbacks %}
-                        UID: {{feedback.uid}} <br>
                         Username: {{feedback.username}} <br>
                         ISBN: {{feedback.isbn}} <br>
                         Book Name: {{feedback.name}} <br>
                         Feedback: {{feedback.feedback}} <br>
                         Rating: {{feedback.rating}} <br> <br>
-                    {% endfor %}
-                {% endif %}
-            </h5>
-        </div>
-    </div>
+                    </h5>
+                </div>
+            </div>
+            <br>
+            {% endfor %}
+        {% endif %}
 {% endblock %}

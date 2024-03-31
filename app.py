@@ -1246,6 +1246,17 @@ def readBook():
     if not book:
         flash("Book does not exist")
         return redirect(url_for("sections"))
+    
+    user_info = UserInfoModel.query.filter_by(uid = current_user.id).first()
+    if not user_info:
+        flash("User info not found")
+        return redirect("/")
+
+    if user_info.role == "General":
+        book_issue = BookIssueModel.query.filter_by(uid = current_user.id, book_id = id).first()
+        if not book_issue:
+            flash("You do not have access to this book")
+            return redirect(f"/sections/{book.section_id}")
 
     return render_template("/readBook.html", book=book)
 
