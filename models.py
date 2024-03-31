@@ -79,4 +79,4 @@ class BuyHistoryModel(db.Model):
     __tablename__ = "buy_history"
     uid = Column(Integer, ForeignKey("user_login.id"), primary_key=True)
     book_id = Column(Integer, ForeignKey("book.id"),  primary_key=True)
-    bought_at = Column(Date, nullable=False)
+    bought_at = Column(DateTime, nullable=False)

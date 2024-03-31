@@ -2,5 +2,16 @@
 {% block title %} General Dashboard {% endblock %}
 
 {% block content %}
-
+<div>
+    <h5>Total Books Issued: {{issue_count}}</h5>
+    <h5>Total Books Requested: {{request_count}}</h5> <br>
+    {% if not book_issues %}
+    <h4>No books issued yet!</h4>
+    {% else %}
+    <h4>Due Dates</h4>
+    {% for book in book_issues %}
+    <h5>{{book.name}}: {{book.date_of_return}}</h5> <br>
+    {% endfor %}
+    {% endif %}
+</div>
 {% endblock %}

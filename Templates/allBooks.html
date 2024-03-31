@@ -9,6 +9,8 @@
     </form>
 </div>
 
+<br>
+
 <div class="flash">
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -19,28 +21,37 @@
     {% endwith %}
 </div>
 
-<div>
-    {% for book, section in books: %}
-        ISBN: {{book.isbn}} <br>
-        Name: {{book.name}} <br>
-        Publisher: {{book.publisher}} <br>
-        Volume: {{book.volume}} <br>
-        Section: {{section.name}} <br>
-        Authors:
-        {% for book_author in book_authors %}
-            {% if book_author.book_id == book.id: %}
-            {{book_author.author_name}}
-            {% endif %}
-        {% endfor %}
-        <br>
-        {% for issued_book_id in issued_book_ids if issued_book_id == book.id %}
-        [Book already requested or issued] <br>
-        {% else %}
-        <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a> 
-        <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
-        <br>
-        {% endfor %}
-        <br>
-    {% endfor %}
+{% if not books %}
+<h4>No books for issue yet!</h4>
+{% else %}
+{% for book, section in books: %}
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5>    
+                ISBN: {{book.isbn}} <br>
+                Name: {{book.name}} <br>
+                Publisher: {{book.publisher}} <br>
+                Volume: {{book.volume}} <br>
+                Section: {{section.name}} <br>
+                Authors:
+                {% for book_author in book_authors %}
+                    {% if book_author.book_id == book.id: %}
+                    {{book_author.author_name}}
+                    {% endif %}
+                {% endfor %}
+                <br>
+            </h5>
+        </div>
+    </div>        
 </div>
+    {% for issued_book_id in issued_book_ids if issued_book_id == book.id %}
+    [Book already requested or issued] <br>
+    {% else %}
+    <a href="/requestBook?id={{book.id}}"><button>Request Book</button></a> 
+    <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
+    <br>
+    {% endfor %}
+    <br>
+{% endfor %}
+{% endif %}
 {% endblock %}

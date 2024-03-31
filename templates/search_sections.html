@@ -34,7 +34,7 @@
     <a href="/removeSection?id={{section.id}}"><button>Remove Section</button></a>
     {% endif %}
     {% endif %}
-    <button onclick = "window.location.href='/viewBooks?section_id={{section.id}}'">View Books</button> <br>
+    <button onclick = "window.location.href='/{{role.lower()}}Dashboard/viewBooks?section_id={{section.id}}'">View Books</button> <br>
     {% endfor %}
 </div>
 {% endblock %}

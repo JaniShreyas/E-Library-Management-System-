@@ -4,15 +4,23 @@
 <div>
     {% if not book_issues %}
     <h3>No Book Issues yet!</h3>
-    {% endif %}
+    {% else %}
 
     {% for book_issue in book_issues %}
-    Book ID: {{book_issue.book_id}} <br>
-    Book Name: {{book_issue.name}} <br>
-    UID: {{book_issue.uid}} <br>
-    Name: {{book_issue.first_name + ' ' + book_issue.last_name}}
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5>    
+                UID: {{book_issue.uid}} <br>
+                Name of User: {{book_issue.first_name + ' ' + book_issue.last_name}} <br>
+                Book ID: {{book_issue.book_id}} <br>
+                Book Name: {{book_issue.name}} <br>
+            </h5>
+        </div>
+    </div>
+    
     <br>
     <a href="/revokeAccess?id={{book_issue.book_id}}&uid={{book_issue.uid}}"><button>Revoke Access</button></a> <br> <br>
     {% endfor %}
+    {% endif %}
 </div>
 {% endblock %}

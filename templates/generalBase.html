@@ -7,12 +7,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='generalStyle.css') }}">
     <link rel="stylesheet" href="/../static/bootstrap.min.css">
     <title>{% block title %}{% endblock %}</title>
+    <style>
+        .display{
+            padding: 10px;
+        }
+    </style>
     {% endblock %}
 </head>
 <body>
-    <nav>
+    <nav style="margin-bottom: 20px;">
         <div>
-          <h2>Welcome, User</h2>
+          <h2>General Dashboard</h2>
         </div>
         <div class="navAnchor">
             <a href="/generalDashboard">Dashboard</a>
@@ -31,7 +36,9 @@
             {% endif %}
         {% endwith %}
     </div>
+    <div class="display">
     {% block content %}
     {% endblock %}
+    </div>
 </body>
 </html>

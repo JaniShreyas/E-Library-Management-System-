@@ -11,17 +11,24 @@
     {% else %}
     <h2>Issued Books: </h2>
     {% for book in issued %}
-    ISBN: {{book.isbn}} <br>
-    Name: {{book.name}} <br>
-    Authors:
-    {% for book_author in book_authors %}
-        {% if book_author.book_id == book.id: %}
-        {{book_author.author_name}}
-        {% endif %}
-    {% endfor %}
-    <br>
-    Publisher: {{book.publisher}}<br>
-    Volume: {{book.volume}}<br><br>
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5>    
+                ISBN: {{book.isbn}} <br>
+                Name: {{book.name}} <br>
+                Authors:
+                {% for book_author in book_authors %}
+                    {% if book_author.book_id == book.id: %}
+                    {{book_author.author_name}}
+                    {% endif %}
+                {% endfor %}
+                <br>
+                Publisher: {{book.publisher}}<br>
+                Volume: {{book.volume}}<br><br>
+            </h5>
+        </div>
+    </div>
+    
     <a href="/readBook?id={{book.id}}"><button>Read Book</button></a>
     <a href="/returnBook?id={{book.id}}"><button>Return Book</button></a> <br> <br>
 
@@ -29,20 +36,29 @@
 
     <h2>Requested Books: </h2>
     {% for book in requested %}
-    ID: {{book.id}} <br>
-    ISBN: {{book.isbn}} <br>
-    Name: {{book.name}} <br>
-    Authors:
-    {% for book_author in book_authors %}
-        {% if book_author.book_id == book.id: %}
-        {{book_author.author_name}}
-        {% endif %}
-    {% endfor %}
-    <br>
-    Publisher: {{book.publisher}}<br>
-    Volume: {{book.volume}}<br>
 
-    {% endfor %}
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5>    
+                ID: {{book.id}} <br>
+                ISBN: {{book.isbn}} <br>
+                Name: {{book.name}} <br>
+                Authors:
+                {% for book_author in book_authors %}
+                    {% if book_author.book_id == book.id: %}
+                    {{book_author.author_name}}
+                    {% endif %}
+                {% endfor %}
+                <br>
+                Publisher: {{book.publisher}}<br>
+                Volume: {{book.volume}}<br>
+
+                {% endfor %}
+            </h5>
+        </div>
+    </div>
+
+    
     {% endif %}
 </div>
 {% endblock %}

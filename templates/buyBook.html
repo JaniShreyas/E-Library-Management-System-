@@ -7,11 +7,8 @@
     <title>Buy Book</title>
 </head>
 <body>
-    <h3 class="buyInfo">{{book.name}}</h3>
-    <h3 class="buyInfo">{{book.price}}</h3>
-
     <div class="wrapper">
-        <h1 class="loginHeading">Buy {{book.name}}</h1>
+        <h1 class="loginHeading">Buy {{book.name}} for Rs{{book.price}}</h1>
         <div class="formClass">
             <form class="formClass" action="/buyBook?id={{book.id}}" method="post">
                 <input type="submit">

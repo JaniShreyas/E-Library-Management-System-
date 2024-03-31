@@ -4,10 +4,47 @@
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
     <style>
-        .controlKey{
-            position: fixed;
-            top:0;
+        .book{
+            height: 90%;
         }
+
+        .wrapper{
+            height: 10%;
+            top: 15px;
+        }
+
+        html, body{
+            margin: 0px;
+        }
+
+        body{
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas{
+            height: 90%;
+        }
+
+        /* #pageNumText{
+            top: 0;
+            left: 49em;
+        }
+
+        #totalPages{
+            top:0;
+            left: 50em;
+        }
+
+        #pageNum{
+            top: 0;
+            left: 51.75em;
+        } */
+
+        .pageDisplayGroup{
+            top: 0;
+        }
+
     </style>
 </head>
 
@@ -22,14 +59,16 @@
         {% endwith %}
     </div>
 
-    <div>
-        <button id="prevButton" disabled="true" class="controlKey" style="left: 650px">Previous</button>
-        <button id="nextButton" class="controlKey" style="left: 800px">Next</button>
-        <p id="pageNumText" class="controlKey"></p>
-        <p id="totalPages" class="controlKey"></p>
-        <input type="number" id="pageNum" width="1px" onchange="updateAndRender()" class="controlKey" style="width: 50px;">
+    <div class="wrapper">
+        <button id="prevButton" disabled="true" class="controlKey">Previous</button>
+        <button id="nextButton" class="controlKey">Next</button>
+        <div class="pageDisplayGroup">
+        <p id="pageNumText"></p>
+        <p id="totalPages"></p>
+        <input type="number" id="pageNum" width="1px" onchange="updateAndRender()" style="width: 50px;">
+        </div>
     </div>
-    <div>
+    <div class="canvas">
         <canvas id="pdf-canvas"></canvas>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>

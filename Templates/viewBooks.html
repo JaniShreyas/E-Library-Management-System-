@@ -44,6 +44,7 @@
         <a href="/librarianDashboard/editBook?id={{book.id}}"><button>Edit Book</button></a> 
         <a href="/librarianDashboard/removeBook?id={{book.id}}"><button>Remove Book</button></a> 
         <a href="/librarianDashboard/viewBookStatus?id={{book.id}}"><button>View Status</button></a> 
+        <a href="/download?id={{book.id}}"><button>Download Book</button></a>
         {% endif %}
         {% if role == "General" %}
         {% for my_book in my_books if my_book.book_id == book.id %}
@@ -55,6 +56,7 @@
         {% endif %}
         <a href="/readFeedback?id={{book.id}}"><button>Read Feedbacks</button></a>
     </div>
+    <br>
     {% endfor %}
     <br>
     {% if role == "Librarian": %}

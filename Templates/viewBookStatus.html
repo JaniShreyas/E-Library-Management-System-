@@ -2,22 +2,26 @@
 {% block title %}Book Status{% endblock %}
 {% block content %}
 
-<div>
-    {% if not book_and_users %}
-    <h3>No book issues exist yet!</h3>
-    {% else %}
+{% if not book_and_users %}
+<h3>No book issues exist yet!</h3>
+{% else %}
 
-    <h3>Book ID: {{id}}</h3>
-    <br>
+<h3>Book ID: {{id}}</h3>
+<br>
 
-    {% for book_user in book_and_users: %}
-    UID: {{book_user.uid}} <br>
-    Name: {{book_user.first_name + " " + book_user.last_name}} <br>
-    Role: {{book_user.role}} <br>
-    Date Of Issue: {{book_user.date_of_issue}} <br>
-    Date of Return: {{book_user.date_of_return}} <br> <br>
-    {% endfor %}
+{% for book_user in book_and_users: %}
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5>    
+            UID: {{book_user.uid}} <br>
+            Name: {{book_user.first_name + " " + book_user.last_name}} <br>
+            Role: {{book_user.role}} <br>
+            Date Of Issue: {{book_user.date_of_issue}} <br>
+            Date of Return: {{book_user.date_of_return}} <br> <br>
+            {% endfor %}
 
-    {% endif %}
+            {% endif %}
+        </h5>
+    </div>
 </div>
 {% endblock %}

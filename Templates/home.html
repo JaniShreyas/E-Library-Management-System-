@@ -20,24 +20,10 @@
 
             justify-content: center;
             width: 100vw;
-            height: 100vh;
+            height: 90%;
         }
 
-        /* Responsive layout - makes a one column layout instead of a two-column layout */
-        @media (max-width: 800px) {
-            .flex-item-right,
-            .flex-item-left {
-              flex: 100%;
-            }
-        }
-
-        .flex-item-left {
-            flex: 50%;
-        }
-
-        .flex-item-right {
-            flex: 50%;
-        }
+        
 
         #container .loginBox {
             align-self: center;
@@ -48,12 +34,33 @@
             border-style: none;
         }
 
+        
         #container #librarianLogin {
             background-color: grey;
         }
-
+        
         #container #generalLogin {
             background-color: lightblue;
+        }
+
+        #librarianLogin:hover{
+            color: darkgrey;
+        }
+
+        #generalLogin:hover{
+            color: darkgrey;
+        }
+
+        .heading{
+            text-align: center;
+        }
+
+        h2{
+            height: 10%;
+        }
+        
+        button{
+            cursor: pointer;
         }
 
         .flash{
@@ -78,9 +85,10 @@
     {% endwith %}
 </div>
 
+    <h2 class="heading">Library Management System</h2>
     <div id="container">
-        <button class="loginBox flex-item-right" id="librarianLogin" onclick="window.location.href='/librarianLogin'">Librarian Login</button>
-        <button class="loginBox flex-item-left" id="generalLogin" onclick="window.location.href='/generalLogin'">General Login</button>
+        <button class="loginBox" id="librarianLogin" onclick="window.location.href='/librarianLogin'">Librarian Login</button>
+        <button class="loginBox" id="generalLogin" onclick="window.location.href='/generalLogin'">General Login</button>
     </div>
 </body>
 </html>

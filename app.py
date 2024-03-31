@@ -1,4 +1,12 @@
-from flask import Flask, redirect, render_template, request, flash, send_from_directory, url_for
+from flask import (
+    Flask,
+    redirect,
+    render_template,
+    request,
+    flash,
+    send_from_directory,
+    url_for,
+)
 from flask_login import (
     LoginManager,
     login_user,
@@ -21,7 +29,7 @@ from models import (
 )
 import os
 from blueprints.api import UserInfo, api_bp, check_role, login_manager, check_role
-from datetime import timedelta, date
+from datetime import datetime, timedelta, date
 from typing import List
 from werkzeug.utils import secure_filename
 
@@ -315,7 +323,40 @@ def addUser():
 @login_required
 @check_role(role="Librarian")
 def librarianDashboard():
-    return render_template("librarianDashboard.html")
+    section_count = 0
+    sections = SectionModel.query.all()
+    if sections:
+        section_count = len(list(sections))
+
+    book_count = 0
+    books = BookModel.query.all()
+    if books:
+        book_count = len(list(books))
+
+    request_count = 0
+    requests = BookRequestsModel.query.all()
+    if requests:
+        request_count = len(list(requests))
+
+    issue_count = 0
+    issues = BookIssueModel.query.all()
+    if issues:
+        issue_count = len(list(issues))
+
+    general_count = 0
+    general_users = UserInfoModel.query.filter_by(role="General").all()
+    if general_users:
+        general_count = len(list(general_users))
+
+    return render_template(
+        "librarianDashboard.html",
+        role="Librarian",
+        section_count=section_count,
+        book_count = book_count,
+        request_count=request_count,
+        issue_count=issue_count,
+        general_count=general_count,
+    )
 
 
 @app.route("/librarianDashboard/sections/", methods=["GET"])
@@ -496,11 +537,11 @@ def addBook():
     db.session.commit()
     book_file.save(content_path)
 
-    return redirect(f"/librarianDashboard/sections/{section.id}")
+    return redirect(f"/sections/{section.id}")
 
 
 # Don't restrict by role since used by both users
-@app.route("/librarianDashboard/sections/<section_id>/", methods=["GET"])
+@app.route("/sections/<section_id>/", methods=["GET"])
 @login_required
 def viewBooks(section_id):
 
@@ -551,7 +592,32 @@ def generalDashboard():
         flash("User info does not exist")
         return redirect("/")
 
-    return render_template("generalDashboard.html", name=user_info.first_name)
+    book_issues = (
+        BookIssueModel.query
+        .filter_by(uid=current_user.id)
+        .join(
+            BookModel, onclause=BookIssueModel.book_id == BookModel.id
+        )
+        .with_entities(BookIssueModel.date_of_return, BookModel.name)
+        .all()
+    )
+    issue_count = 0
+    if book_issues:
+        issue_count = len(list(book_issues))
+
+    request_count = 0
+    book_requests = BookRequestsModel.query.filter_by(uid=current_user.id).all()
+    if book_requests:
+        request_count = len(list(book_requests))
+
+    return render_template(
+        "generalDashboard.html",
+        name=user_info.first_name,
+        role=user_info.role,
+        issue_count=issue_count,
+        book_issues=book_issues,
+        request_count=request_count,
+    )
 
 
 @app.route("/generalDashboard/requestBooks/", methods=["GET"])
@@ -693,6 +759,7 @@ def generalBooks():
             issued=issued,
             requested=requested,
             book_authors=book_authors,
+            role="General",
         )
 
     return ""
@@ -938,12 +1005,12 @@ def editBook():
         book_author = BookAuthorModel.query.filter_by(book_id=id).all()
         if not book_author:
             flash("Book Author not found")
-            return redirect(f"/librarianDashboard/sections/{book.section_id}")
+            return redirect(f"/sections/{book.section_id}")
 
         section = SectionModel.query.filter_by(id=book.section_id).first()
         if not section:
             flash("Section not found")
-            return redirect(f"/librarianDashboard/sections/{book.section_id}")
+            return redirect(f"/sections/{book.section_id}")
 
         sections = SectionModel.query.all()
 
@@ -1060,7 +1127,7 @@ def editBook():
 
     db.session.commit()
 
-    return redirect(f"/librarianDashboard/sections/{section.id}")
+    return redirect(f"/sections/{section.id}")
 
 
 @app.route("/librarianDashboard/removeSection/", methods=["GET"])
@@ -1116,7 +1183,7 @@ def removeBook():
     BookModel.query.filter_by(id=id).delete()
     db.session.commit()
 
-    return redirect(f"/librarianDashboard/sections/{section_id}")
+    return redirect(f"/sections/{section_id}")
 
 
 @app.route("/librarianDashboard/viewBookStatus/", methods=["GET"])
@@ -1185,6 +1252,7 @@ def readFeedback():
             BookFeedbackModel.query.join(
                 BookModel, onclause=BookModel.id == BookFeedbackModel.book_id
             )
+            .join(UserLoginModel, onclause=UserLoginModel.id == BookFeedbackModel.uid)
             .with_entities(
                 BookModel.id,
                 BookModel.isbn,
@@ -1192,6 +1260,7 @@ def readFeedback():
                 BookFeedbackModel.uid,
                 BookFeedbackModel.feedback,
                 BookFeedbackModel.rating,
+                UserLoginModel.username,
             )
             .all()
         )
@@ -1203,6 +1272,7 @@ def readFeedback():
         book_feedbacks = (
             BookFeedbackModel.query.filter_by(book_id=id)
             .join(BookModel, onclause=BookModel.id == BookFeedbackModel.book_id)
+            .join(UserLoginModel, onclause=UserLoginModel.id == BookFeedbackModel.uid)
             .with_entities(
                 BookModel.id,
                 BookModel.isbn,
@@ -1210,6 +1280,7 @@ def readFeedback():
                 BookFeedbackModel.uid,
                 BookFeedbackModel.feedback,
                 BookFeedbackModel.rating,
+                UserLoginModel.username,
             )
             .all()
         )
@@ -1238,7 +1309,14 @@ def searchSection():
     sections = SectionModel.query.filter(
         SectionModel.search_word.like(modified_search_word)
     ).all()
-    return render_template("search_sections.html", sections=sections)
+
+    user_info = UserInfoModel.query.filter_by(uid=current_user.id).first()
+    if not user_info:
+        return redirect("/")
+
+    return render_template(
+        "search_sections.html", sections=sections, role=user_info.role
+    )
 
 
 @app.route("/viewBooks/<section_id>/search/", methods=["GET"])
@@ -1283,13 +1361,22 @@ def searchRequestBooks():
     search_word = request.args.get("search_word", default="")
     books = findBooks(search_word)
 
+    user_info = UserInfoModel.query.filter_by(uid=current_user.id).first()
+    if not user_info:
+        flash("User info does not exist")
+        return redirect("/")
+
     return render_template(
-        "search_allBooks.html", books=books, book_authors=book_authors
+        "search_allBooks.html",
+        books=books,
+        book_authors=book_authors,
+        role=user_info.role,
     )
 
 
 @app.route("/generalDashboard/books/search/", methods=["GET"])
 @login_required
+@check_role(role="General")
 def searchGeneralBooks():
 
     book_authors = get_all_book_authors()
@@ -1315,10 +1402,13 @@ def searchGeneralBooks():
         requested=requested,
         issued=issued,
         book_authors=book_authors,
+        role="General",
     )
 
 
 @app.route("/buyBook", methods=["GET", "POST"])
+@login_required
+@check_role(role="General")
 def buyBook():
     id = request.args.get("id")
     book = BookModel.query.filter_by(id=id).first()
@@ -1335,21 +1425,33 @@ def buyBook():
     if buy_history:
         flash("You have already bought this book")
     else:
-        buy_history = BuyHistoryModel(uid = current_user.id, book_id = book.id, bought_at = date.today())  # type: ignore
+        buy_history = BuyHistoryModel(uid=current_user.id, book_id=book.id, bought_at=datetime.now())  # type: ignore
         db.session.add(buy_history)
         db.session.commit()
 
     return send_from_directory(
-        app.config["UPLOAD_FOLDER"], book.content.replace("books/", '', 1), as_attachment=True
+        app.config["UPLOAD_FOLDER"],
+        book.content.replace("books/", "", 1),
+        as_attachment=True,
     )
 
-@app.route("/test")
+
+@app.route("/download")
+@login_required
+@check_role(role="Librarian")
 def route():
     id = request.args.get("id")
     book = BookModel.query.filter_by(id=id).first()
+    if not book:
+        flash("Book not found")
+        return redirect(f"/download?id={id}")
+
     return send_from_directory(
-            app.config["UPLOAD_FOLDER"], book.content.replace("books/", '', 1), as_attachment=True # type: ignore
-        ) 
+        app.config["UPLOAD_FOLDER"],
+        book.content.replace("books/", "", 1),
+        as_attachment=True,
+    )
+
 
 if __name__ == "__main__":
     app.run(debug=True)

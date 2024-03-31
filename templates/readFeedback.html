@@ -6,15 +6,24 @@
 {% block title %} Read Feedback {% endblock %}
 {% block content %}
 <div>
-    {% if not feedbacks %}
+
+    {% if not book_feedbacks %}
     <h3>No feedbacks exist</h3>
-    {% endif %}
-    {% for feedback in book_feedbacks %}
-    ISBN: {{feedback.isbn}} <br>
-    Book Name: {{feedback.name}} <br>
-    UID: {{feedback.uid}} <br>
-    Feedback: {{feedback.feedback}} <br>
-    Rating: {{feedback.rating}} <br> <br>
-    {% endfor %}
+    {% else %}
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5>    
+                {% for feedback in book_feedbacks %}
+                UID: {{feedback.uid}} <br>
+                Username: {{feedback.username}} <br>
+                ISBN: {{feedback.isbn}} <br>
+                Book Name: {{feedback.name}} <br>
+                Feedback: {{feedback.feedback}} <br>
+                Rating: {{feedback.rating}} <br> <br>
+                {% endfor %}
+                {% endif %}
+            </h5>
+        </div>
+    </div>
 </div>
 {% endblock %}
