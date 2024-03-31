@@ -8,15 +8,15 @@
 </head>
 <body>
     
-    <div class="flash">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+            <div class="flash">
                 {% for message in messages %}
                 {{message}} <br>
                 {% endfor %}
+            </div>
             {% endif %}
         {% endwith %}
-    </div>
     <div class="wrapper">
         <h1 class="loginHeading">Add Book</h1>
         <div class="formClass">

@@ -30,15 +30,15 @@
             <a href="/logout">Logout</a>
         </div>
     </nav>
-    <div class="flash">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+            <div class="flash">
                 {% for message in messages %}
                 {{message}} <br>
                 {% endfor %}
+            </div>
             {% endif %}
         {% endwith %}
-    </div>
     <div class="display">
     {% block content %}
     {% endblock %}

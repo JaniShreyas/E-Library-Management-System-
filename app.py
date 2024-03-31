@@ -449,6 +449,8 @@ def addBook():
     author_names = request.form.get("author_names")
     price = request.form.get("price")
 
+    
+
     if not book_file:
         flash("Book file not given")
         return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
@@ -517,6 +519,9 @@ def addBook():
     if not isbn:
         flash("ISBN not provided")
         return redirect(f"/librarianDashboard/addBook?section_id={section_id}")
+    
+    if len(isbn) != 13:
+        flash("ISBN should be of 13 characters")
 
     if not publisher:
         flash("Publisher not provided")
