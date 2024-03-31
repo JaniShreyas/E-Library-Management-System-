@@ -14,7 +14,6 @@ from flask_login import (
     current_user,
     login_required,
 )
-from sqlalchemy import desc
 from models import (
     BuyHistoryModel,
     db,
@@ -28,9 +27,9 @@ from models import (
     BookFeedbackModel,
 )
 import os
-from blueprints.api import UserInfo, api_bp, check_role, login_manager, check_role
+from blueprints.api import api_bp, login_manager
 from datetime import datetime, timedelta, date
-from typing import List
+from typing import List, Callable
 from werkzeug.utils import secure_filename
 
 currentDirectory = os.path.dirname(os.path.realpath(__file__))
@@ -58,6 +57,24 @@ login_manager = LoginManager()
 
 max_issue_time = 7
 
+# Decorator function to verify role
+def check_role(role: str):
+    def decorator(function: Callable):
+        def wrapper(*args, **kwargs):
+            info = UserInfoModel.query.filter_by(uid=current_user.id).first()
+
+            if not info:
+                return "Info not found", 404
+
+            if info.role != role:
+                return f"Only {role} user has access here", 400
+            else:
+                return function(*args, **kwargs)
+
+        wrapper.__name__ = function.__name__
+        return wrapper
+
+    return decorator
 
 def raw(input: str) -> str:
     return input.lower().replace(" ", "")
@@ -318,6 +335,10 @@ def addUser():
     login_user(userLogin)
     return redirect("/generalDashboard")
 
+@app.route("/viewAllBooks", methods = ["GET"])
+@login_required
+def viewAllBooks():
+    return redirect(f"/requestBooks/search?search_word=")
 
 @app.route("/librarianDashboard/", methods=["GET"])
 @login_required

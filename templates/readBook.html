@@ -15,55 +15,56 @@
             flex-direction: column;
         }
 
+        .wrapper {
+            justify-content: center;
+            flex-direction: row;
+            align-items: center;
+            display: flex;
+            margin-bottom: 2px;
+        }
+        
+        .canvas {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .fixed-controls {
             position: fixed;
-            top: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             left: 0;
             width: 100%;
+            top: 0;
             background-color: #fff;
+            align-items: center;
+            display: flex;
+            justify-content: center;
             z-index: 999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .canvas {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-        }
-
-        .wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 2px;
-            flex-direction: row;
         }
 
         .controlKey {
             margin: 0 10px;
         }
 
-        .pageDisplayGroup {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0 10px;
-        }
-
+        
         .flash {
             display: flex;
-            justify-content: center;
-            align-items: center;
             margin-top: 10px;
+            align-items: center;
+            justify-content: center;
         }
-
-        #pageNum {
+        
+        .pageDisplayGroup {
+            display: flex;
             margin: 0 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #pageNum {
             width: 50px;
+            margin: 0 10px;
         }
 
         #pageNumText {
